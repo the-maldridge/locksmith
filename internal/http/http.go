@@ -1,21 +1,23 @@
 package http
 
 import (
-	"net/http"
-
 	"github.com/labstack/echo"
+
+	"github.com/the-maldridge/locksmith/internal/nm"
 )
 
 // New initializes and returns an http.Server.
-func New() (Server, error) {
+func New(netman nm.NetworkManager) (Server, error) {
 	e := echo.New()
-	e.GET("/", func(c echo.Context) error {
-		return c.String(http.StatusOK, "Hello, World!")
-	})
 
-	return Server{
-		e,
-	}, nil
+	s := Server{
+		e:  e,
+		nm: netman,
+	}
+
+	e.POST("/network/:id/clients", s.registerClient)
+
+	return s, nil
 }
 
 // Serve is called to commence serving.  It will only return with an

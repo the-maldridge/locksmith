@@ -1,0 +1,9 @@
+[[Network]]
+Name = "Default Network"
+ID = "default"
+Interface = "wg0"
+
+[[Network]]
+Name = "Another Network"
+ID = "anet"
+Interface = "wg1"
