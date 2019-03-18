@@ -10,17 +10,21 @@ type NetworkManager struct {
 	networks []Network
 
 	preApproveHooks []PreApproveHook
-
-	knownPeers map[string][]models.Client
 }
 
 // Network represents a network from the configuration.
 type Network struct {
-	Name      string
-	ID        string
-	Interface string
+	Name        string
+	ID          string
+	Interface   string
+	ApproveMode string
+	ActiveMode  string
 
 	PreApproveHooks []string
+
+	StagedPeers   map[string]models.Client
+	ApprovedPeers map[string]models.Client
+	ActivePeers   map[string]models.Client
 }
 
 // PreApproveHook represents a hook that gets called during the

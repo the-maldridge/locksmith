@@ -2,6 +2,7 @@ package nm
 
 import (
 	"log"
+	"strings"
 
 	"github.com/spf13/viper"
 
@@ -13,7 +14,12 @@ func New() (NetworkManager, error) {
 	nm := NetworkManager{}
 
 	nm.networks = parseNetworkConfig()
-	nm.knownPeers = make(map[string][]models.Client)
+
+	for i := range nm.networks {
+		nm.networks[i].StagedPeers = make(map[string]models.Client)
+		nm.networks[i].ApprovedPeers = make(map[string]models.Client)
+		nm.networks[i].ActivePeers = make(map[string]models.Client)
+	}
 
 	return nm, nil
 }
@@ -45,6 +51,29 @@ func (nm *NetworkManager) AttemptNetworkRegistration(netID string, client models
 			return err
 		}
 	}
+
+	return nm.stagePeer(netID, client)
+}
+
+// stagePeer takes a pre-approved peer and stages them.  If the
+// ApproveMode is set to AUTO then the peer is not staged and is
+// instead added directly to ApprovedPeers.
+func (nm *NetworkManager) stagePeer(netID string, client models.Client) error {
+	net, err := nm.GetNet(netID)
+	if err != nil {
+		return err
+	}
+
+	if strings.ToUpper(net.ApproveMode) == "AUTO" {
+		// Automatic approval, add directly to approved peers.
+		net.ApprovedPeers[client.PubKey] = client
+		log.Println(net)
+		log.Println("Automatic approval, peer auto-approved")
+		return nil
+	}
+	net.StagedPeers[client.PubKey] = client
+	log.Println(net)
+	log.Println("The peer has been staged")
 	return nil
 }
 
