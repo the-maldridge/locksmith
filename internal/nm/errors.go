@@ -13,4 +13,8 @@ var (
 	// ErrUnknownNetwork is returns if a network with an unknown
 	// ID is requested.
 	ErrUnknownNetwork = errors.New("No network with that ID exists")
+
+	// ErrUnknownPeer is returned when a peer is requested but
+	// this peer is not known to the system.
+	ErrUnknownPeer = errors.New("No peer with that key is known")
 )

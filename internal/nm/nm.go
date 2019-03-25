@@ -77,6 +77,27 @@ func (nm *NetworkManager) stagePeer(netID string, client models.Client) error {
 	return nil
 }
 
+// ActivatePeer recalls the peer from the ApprovedPeers map and
+// attempts to activate it.  If the peer is not approved an error is
+// returned.
+func (nm *NetworkManager) ActivatePeer(netID, pubkey string) error {
+	net, err := nm.GetNet(netID)
+	if err != nil {
+		return err
+	}
+
+	log.Println(net.ApprovedPeers)
+	log.Println(pubkey)
+
+	peer, ok := net.ApprovedPeers[pubkey]
+	if !ok {
+		return ErrUnknownPeer
+	}
+
+	net.ActivePeers[peer.PubKey] = peer
+	return net.Sync()
+}
+
 func parseNetworkConfig() []Network {
 	var out []Network
 	if err := viper.UnmarshalKey("Network", &out); err != nil {
