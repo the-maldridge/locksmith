@@ -9,14 +9,14 @@ import (
 	"github.com/the-maldridge/locksmith/internal/models"
 )
 
-func (s *Server) registerClient(c echo.Context) error {
+func (s *Server) registerPeer(c echo.Context) error {
 	// Check if the network requested is actually known.
 	if _, err := s.nm.GetNet(c.Param("id")); err != nil {
 		return c.String(http.StatusBadRequest, err.Error())
 	}
 
 	// If the network is known, then figure out the request.
-	client := new(models.Client)
+	client := new(models.Peer)
 	if err := c.Bind(client); err != nil {
 		return err
 	}
@@ -30,7 +30,7 @@ func (s *Server) registerClient(c echo.Context) error {
 	return c.JSON(http.StatusOK, client)
 }
 
-func (s *Server) activateClient(c echo.Context) error {
+func (s *Server) activatePeer(c echo.Context) error {
 	// Check if the network requested is actually known.
 	if _, err := s.nm.GetNet(c.Param("id")); err != nil {
 		return c.String(http.StatusBadRequest, err.Error())

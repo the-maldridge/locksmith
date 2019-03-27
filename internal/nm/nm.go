@@ -16,9 +16,9 @@ func New() (NetworkManager, error) {
 	nm.networks = parseNetworkConfig()
 
 	for i := range nm.networks {
-		nm.networks[i].StagedPeers = make(map[string]models.Client)
-		nm.networks[i].ApprovedPeers = make(map[string]models.Client)
-		nm.networks[i].ActivePeers = make(map[string]models.Client)
+		nm.networks[i].StagedPeers = make(map[string]models.Peer)
+		nm.networks[i].ApprovedPeers = make(map[string]models.Peer)
+		nm.networks[i].ActivePeers = make(map[string]models.Peer)
 	}
 
 	return nm, nil
@@ -40,7 +40,7 @@ func (nm *NetworkManager) GetNet(id string) (Network, error) {
 // after we're confident they're OK, then we add them to a staged
 // clients list.  Staged clients are de-staged asynchronously from
 // this request.
-func (nm *NetworkManager) AttemptNetworkRegistration(netID string, client models.Client) error {
+func (nm *NetworkManager) AttemptNetworkRegistration(netID string, client models.Peer) error {
 	net, err := nm.GetNet(netID)
 	if err != nil {
 		return err
@@ -58,7 +58,7 @@ func (nm *NetworkManager) AttemptNetworkRegistration(netID string, client models
 // stagePeer takes a pre-approved peer and stages them.  If the
 // ApproveMode is set to AUTO then the peer is not staged and is
 // instead added directly to ApprovedPeers.
-func (nm *NetworkManager) stagePeer(netID string, client models.Client) error {
+func (nm *NetworkManager) stagePeer(netID string, client models.Peer) error {
 	net, err := nm.GetNet(netID)
 	if err != nil {
 		return err

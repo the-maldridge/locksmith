@@ -22,12 +22,12 @@ type Network struct {
 
 	PreApproveHooks []string
 
-	StagedPeers   map[string]models.Client
-	ApprovedPeers map[string]models.Client
-	ActivePeers   map[string]models.Client
+	StagedPeers   map[string]models.Peer
+	ApprovedPeers map[string]models.Peer
+	ActivePeers   map[string]models.Peer
 }
 
 // PreApproveHook represents a hook that gets called during the
 // attempt to register the client at all.  These are designed to abort
 // early if for example the owner isn't known to the system.
-type PreApproveHook func(string, models.Client) error
+type PreApproveHook func(string, models.Peer) error

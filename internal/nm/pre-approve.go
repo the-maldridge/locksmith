@@ -27,7 +27,7 @@ func RegisterPreApproveHook(name string, h PreApproveHook) {
 
 // RunPreApproveHook runs the named hook and figures out of the client
 // is pre-approved.
-func (nm *NetworkManager) RunPreApproveHook(hook, net string, client models.Client) error {
+func (nm *NetworkManager) RunPreApproveHook(hook, net string, client models.Peer) error {
 	h, ok := preApproveHooks[hook]
 	if !ok {
 		return ErrUnknownHook

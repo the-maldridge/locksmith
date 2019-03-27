@@ -15,8 +15,8 @@ func New(netman nm.NetworkManager) (Server, error) {
 		nm: netman,
 	}
 
-	e.POST("/v1/network/:id/clients", s.registerClient)
-	e.PUT("/v1/network/:id/clients/activate", s.activateClient)
+	e.POST("/v1/network/:id/peers", s.registerPeer)
+	e.PUT("/v1/network/:id/peers/activate", s.activatePeer)
 
 	return s, nil
 }
