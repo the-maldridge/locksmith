@@ -9,11 +9,23 @@ import (
 	"github.com/the-maldridge/locksmith/internal/models"
 )
 
+func init() {
+	viper.SetDefault("nm.store.impl", "json")
+}
+
 // New returns an initialized instance ready to go.
 func New() (NetworkManager, error) {
 	nm := NetworkManager{}
 
+	s, err := InitializeStore(viper.GetString("nm.store.impl"))
+	if err != nil {
+		return NetworkManager{}, err
+	}
+	nm.s = s
+
 	nm.networks = parseNetworkConfig()
+
+	nm.networks = nm.loadPeers(nm.networks)
 
 	for i := range nm.networks {
 		nm.networks[i].StagedPeers = make(map[string]models.Peer)
@@ -105,4 +117,18 @@ func parseNetworkConfig() []Network {
 		return nil
 	}
 	return out
+}
+
+func (nm *NetworkManager) loadPeers(n []Network) []Network {
+	for i := range nm.networks {
+		t, err := nm.s.GetNetwork(n[i].ID)
+		if err != nil {
+			log.Println("Error reloading network:", n[i].ID)
+			continue
+		}
+		n[i].StagedPeers = t.StagedPeers
+		n[i].ApprovedPeers = t.ApprovedPeers
+		n[i].ActivePeers = t.ActivePeers
+	}
+	return n
 }

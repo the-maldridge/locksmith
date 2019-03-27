@@ -8,6 +8,7 @@ import (
 // and live.
 type NetworkManager struct {
 	networks []Network
+	s        Store
 
 	preApproveHooks []PreApproveHook
 }

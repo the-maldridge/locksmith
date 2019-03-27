@@ -17,4 +17,12 @@ var (
 	// ErrUnknownPeer is returned when a peer is requested but
 	// this peer is not known to the system.
 	ErrUnknownPeer = errors.New("No peer with that key is known")
+
+	// ErrUnknownStore is returned if the requested store isn't
+	// known to the system.
+	ErrUnknownStore = errors.New("No store with that name is known")
+
+	// ErrInternalError is returned when something fundamentally
+	// unexpected happens.
+	ErrInternalError = errors.New("An unspecified error has occured")
 )
