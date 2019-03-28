@@ -25,13 +25,12 @@ func New() (NetworkManager, error) {
 
 	nm.networks = parseNetworkConfig()
 
-	nm.networks = nm.loadPeers(nm.networks)
-
 	for i := range nm.networks {
 		nm.networks[i].StagedPeers = make(map[string]models.Peer)
 		nm.networks[i].ApprovedPeers = make(map[string]models.Peer)
 		nm.networks[i].ActivePeers = make(map[string]models.Peer)
 	}
+	nm.networks = nm.loadPeers(nm.networks)
 
 	return nm, nil
 }
@@ -64,7 +63,11 @@ func (nm *NetworkManager) AttemptNetworkRegistration(netID string, client models
 		}
 	}
 
-	return nm.stagePeer(netID, client)
+	if err := nm.stagePeer(netID, client); err != nil {
+		return err
+	}
+
+	return nm.s.PutNetwork(net)
 }
 
 // stagePeer takes a pre-approved peer and stages them.  If the
@@ -107,7 +110,8 @@ func (nm *NetworkManager) ActivatePeer(netID, pubkey string) error {
 	}
 
 	net.ActivePeers[peer.PubKey] = peer
-	return net.Sync()
+	go net.Sync()
+	return nm.s.PutNetwork(net)
 }
 
 func parseNetworkConfig() []Network {
@@ -129,6 +133,13 @@ func (nm *NetworkManager) loadPeers(n []Network) []Network {
 		n[i].StagedPeers = t.StagedPeers
 		n[i].ApprovedPeers = t.ApprovedPeers
 		n[i].ActivePeers = t.ActivePeers
+
+		log.Printf("Network '%s' loaded with %d staged, %d approved, %d active",
+			n[i].ID,
+			len(t.StagedPeers),
+			len(t.ApprovedPeers),
+			len(t.ActivePeers),
+		)
 	}
 	return n
 }

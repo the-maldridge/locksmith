@@ -59,5 +59,5 @@ func (s *Store) PutNetwork(n nm.Network) error {
 		return err
 	}
 
-	return ioutil.WriteFile(filepath.Join(s.root, fmt.Sprintf("%s.%s", n.ID, ".json")), blob, 0640)
+	return ioutil.WriteFile(filepath.Join(s.root, fmt.Sprintf("%s.json", n.ID)), blob, 0640)
 }
