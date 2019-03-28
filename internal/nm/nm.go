@@ -92,6 +92,25 @@ func (nm *NetworkManager) stagePeer(netID string, client models.Peer) error {
 	return nil
 }
 
+// ApprovePeer looks for a pubkey in StagedPeers and puts it into
+// ApprovedPeers.
+func (nm *NetworkManager) ApprovePeer(netID, pubkey string) error {
+	net, err := nm.GetNet(netID)
+	if err != nil {
+		return err
+	}
+
+	peer, ok := net.StagedPeers[pubkey]
+	if !ok {
+		log.Println(net.StagedPeers)
+		return ErrUnknownPeer
+	}
+
+	net.ApprovedPeers[pubkey] = peer
+	delete(net.StagedPeers, pubkey)
+	return nm.s.PutNetwork(net)
+}
+
 // ActivatePeer recalls the peer from the ApprovedPeers map and
 // attempts to activate it.  If the peer is not approved an error is
 // returned.

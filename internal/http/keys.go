@@ -30,29 +30,49 @@ func (s *Server) registerPeer(c echo.Context) error {
 	return c.JSON(http.StatusOK, client)
 }
 
+func (s *Server) approvePeer(c echo.Context) error {
+	netID, pubkey, err := s.parseKeyFromContext(c)
+	if err != nil {
+		return err
+	}
+
+	if err := s.nm.ApprovePeer(netID, pubkey); err != nil {
+		return c.String(http.StatusBadRequest, err.Error())
+	}
+
+	return c.NoContent(http.StatusNoContent)
+}
+
 func (s *Server) activatePeer(c echo.Context) error {
+	netID, pubkey, err := s.parseKeyFromContext(c)
+	if err != nil {
+		return err
+	}
+
+	if err := s.nm.ActivatePeer(netID, pubkey); err != nil {
+		return c.String(http.StatusBadRequest, err.Error())
+	}
+
+	return c.NoContent(http.StatusNoContent)
+}
+
+func (s *Server) parseKeyFromContext(c echo.Context) (string, string, error) {
 	// Check if the network requested is actually known.
 	if _, err := s.nm.GetNet(c.Param("id")); err != nil {
-		return c.String(http.StatusBadRequest, err.Error())
+		return "", "", c.String(http.StatusBadRequest, err.Error())
 	}
 
 	var b struct {
 		PubKey string
 	}
 	if err := c.Bind(&b); err != nil {
-		return err
+		return "", "", err
 	}
 
 	// TODO: Dirty rotten hack to stick the equal sign back on the
 	// end of the key after the JSON parser eats it.  Replace this
 	// with something more intelligent later.
-	b.PubKey += "="
+	// b.PubKey += "="
 
-	log.Println(b)
-
-	if err := s.nm.ActivatePeer(c.Param("id"), b.PubKey); err != nil {
-		return c.String(http.StatusBadRequest, err.Error())
-	}
-
-	return c.NoContent(http.StatusNoContent)
+	return c.Param("id"), b.PubKey, nil
 }
