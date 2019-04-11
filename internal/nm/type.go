@@ -1,6 +1,8 @@
 package nm
 
 import (
+	"time"
+
 	"github.com/the-maldridge/locksmith/internal/models"
 )
 
@@ -19,9 +21,14 @@ type Network struct {
 	ID             string
 	Interface      string
 	ApproveMode    string
+	ApproveExpiry  time.Duration
 	ActivateMode   string
+	ActivateExpiry time.Duration
 
 	PreApproveHooks []string
+
+	ApprovalExpirations   map[string]time.Time
+	ActivationExpirations map[string]time.Time
 
 	StagedPeers   map[string]models.Peer
 	ApprovedPeers map[string]models.Peer

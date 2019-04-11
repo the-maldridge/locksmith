@@ -3,6 +3,7 @@ package nm
 import (
 	"log"
 	"strings"
+	"time"
 
 	"github.com/spf13/viper"
 
@@ -25,24 +26,37 @@ func New() (NetworkManager, error) {
 
 	nm.networks = parseNetworkConfig()
 
+	useExpiry := false
 	for i := range nm.networks {
 		nm.networks[i].StagedPeers = make(map[string]models.Peer)
 		nm.networks[i].ApprovedPeers = make(map[string]models.Peer)
 		nm.networks[i].ActivePeers = make(map[string]models.Peer)
+		nm.networks[i].ApprovalExpirations = make(map[string]time.Time)
+		nm.networks[i].ActivationExpirations = make(map[string]time.Time)
+
+		if nm.networks[i].ApproveExpiry != 0 || nm.networks[i].ActivateExpiry != 0 {
+			useExpiry = true
+		}
 	}
 	nm.networks = nm.loadPeers(nm.networks)
+
+	// Launch the expiration timer
+	if useExpiry {
+		nm.ProcessExpirations()
+		go nm.expirationTimer()
+	}
 
 	return nm, nil
 }
 
 // GetNet returns the network if known or an error if not known.
-func (nm *NetworkManager) GetNet(id string) (Network, error) {
+func (nm *NetworkManager) GetNet(id string) (*Network, error) {
 	for i := range nm.networks {
 		if nm.networks[i].ID == id {
-			return nm.networks[i], nil
+			return &nm.networks[i], nil
 		}
 	}
-	return Network{}, ErrUnknownNetwork
+	return &Network{}, ErrUnknownNetwork
 }
 
 // AttemptNetworkRegistration as the name implies attempts to register
@@ -67,7 +81,7 @@ func (nm *NetworkManager) AttemptNetworkRegistration(netID string, client models
 		return err
 	}
 
-	return nm.s.PutNetwork(net)
+	return nm.s.PutNetwork(*net)
 }
 
 // stagePeer takes a pre-approved peer and stages them.  If the
@@ -84,7 +98,7 @@ func (nm *NetworkManager) stagePeer(netID string, client models.Peer) error {
 		net.Name,
 		client.PubKey)
 
-	if err := nm.s.PutNetwork(net); err != nil {
+	if err := nm.s.PutNetwork(*net); err != nil {
 		return err
 	}
 
@@ -113,7 +127,13 @@ func (nm *NetworkManager) ApprovePeer(netID, pubkey string) error {
 	net.ApprovedPeers[pubkey] = peer
 	delete(net.StagedPeers, pubkey)
 
-	if err := nm.s.PutNetwork(net); err != nil {
+	log.Println(net.ApproveExpiry)
+	if net.ApproveExpiry != 0 {
+		// Approvals expire for this network
+		net.ApprovalExpirations[pubkey] = time.Now().Add(net.ApproveExpiry)
+	}
+
+	if err := nm.s.PutNetwork(*net); err != nil {
 		return err
 	}
 
@@ -140,9 +160,14 @@ func (nm *NetworkManager) ActivatePeer(netID, pubkey string) error {
 		return ErrUnknownPeer
 	}
 
+	if net.ActivateExpiry != 0 {
+		// Activation expiry is active for this network.
+		net.ActivationExpirations[pubkey] = time.Now().Add(net.ActivateExpiry)
+	}
+
 	net.ActivePeers[peer.PubKey] = peer
 	go net.Sync()
-	return nm.s.PutNetwork(net)
+	return nm.s.PutNetwork(*net)
 }
 
 func parseNetworkConfig() []Network {
@@ -164,6 +189,9 @@ func (nm *NetworkManager) loadPeers(n []Network) []Network {
 		n[i].StagedPeers = t.StagedPeers
 		n[i].ApprovedPeers = t.ApprovedPeers
 		n[i].ActivePeers = t.ActivePeers
+
+		n[i].ApprovalExpirations = t.ApprovalExpirations
+		n[i].ActivationExpirations = t.ActivationExpirations
 
 		log.Printf("Network '%s' loaded with %d staged, %d approved, %d active",
 			n[i].ID,

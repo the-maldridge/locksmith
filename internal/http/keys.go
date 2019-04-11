@@ -66,10 +66,5 @@ func (s *Server) parseKeyFromContext(c echo.Context) (string, string, error) {
 		return "", "", err
 	}
 
-	// TODO: Dirty rotten hack to stick the equal sign back on the
-	// end of the key after the JSON parser eats it.  Replace this
-	// with something more intelligent later.
-	// b.PubKey += "="
-
 	return c.Param("id"), b.PubKey, nil
 }
