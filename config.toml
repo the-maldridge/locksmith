@@ -8,3 +8,10 @@ Name = "Another Network"
 ID = "anet"
 Interface = "wg1"
 ApproveMode = "AUTO"
+
+[[Network]]
+Name = "ChaosNet"
+ID = "chaos"
+Interface = "wg2"
+ApproveMode = "AUTO"
+ActivateMode = "AUTO"

@@ -1,7 +1,6 @@
 package http
 
 import (
-	"log"
 	"net/http"
 
 	"github.com/labstack/echo"
@@ -20,8 +19,6 @@ func (s *Server) registerPeer(c echo.Context) error {
 	if err := c.Bind(client); err != nil {
 		return err
 	}
-
-	log.Println("Network:", c.Param("id"), client)
 
 	if err := s.nm.AttemptNetworkRegistration(c.Param("id"), *client); err != nil {
 		return c.JSON(http.StatusPreconditionFailed, err.Error())

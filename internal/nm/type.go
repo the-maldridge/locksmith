@@ -15,11 +15,11 @@ type NetworkManager struct {
 
 // Network represents a network from the configuration.
 type Network struct {
-	Name        string
-	ID          string
-	Interface   string
-	ApproveMode string
-	ActiveMode  string
+	Name           string
+	ID             string
+	Interface      string
+	ApproveMode    string
+	ActivateMode   string
 
 	PreApproveHooks []string
 

@@ -79,16 +79,21 @@ func (nm *NetworkManager) stagePeer(netID string, client models.Peer) error {
 		return err
 	}
 
-	if strings.ToUpper(net.ApproveMode) == "AUTO" {
-		// Automatic approval, add directly to approved peers.
-		net.ApprovedPeers[client.PubKey] = client
-		log.Println(net)
-		log.Println("Automatic approval, peer auto-approved")
-		return nil
-	}
 	net.StagedPeers[client.PubKey] = client
-	log.Println(net)
-	log.Println("The peer has been staged")
+	log.Printf("Network '%s' has staged peer '%s'",
+		net.Name,
+		client.PubKey)
+
+	if err := nm.s.PutNetwork(net); err != nil {
+		return err
+	}
+
+	if strings.ToUpper(net.ApproveMode) == "AUTO" {
+		log.Printf("Network '%s' is automatically approving peer '%s'",
+			net.Name,
+			client.PubKey)
+		return nm.ApprovePeer(netID, client.PubKey)
+	}
 	return nil
 }
 
@@ -102,13 +107,23 @@ func (nm *NetworkManager) ApprovePeer(netID, pubkey string) error {
 
 	peer, ok := net.StagedPeers[pubkey]
 	if !ok {
-		log.Println(net.StagedPeers)
 		return ErrUnknownPeer
 	}
 
 	net.ApprovedPeers[pubkey] = peer
 	delete(net.StagedPeers, pubkey)
-	return nm.s.PutNetwork(net)
+
+	if err := nm.s.PutNetwork(net); err != nil {
+		return err
+	}
+
+	if strings.ToUpper(net.ActivateMode) == "AUTO" {
+		log.Printf("Network '%s' is automatically activating peer '%s'",
+			net.Name,
+			pubkey)
+		return nm.ActivatePeer(netID, pubkey)
+	}
+	return nil
 }
 
 // ActivatePeer recalls the peer from the ApprovedPeers map and
@@ -119,9 +134,6 @@ func (nm *NetworkManager) ActivatePeer(netID, pubkey string) error {
 	if err != nil {
 		return err
 	}
-
-	log.Println(net.ApprovedPeers)
-	log.Println(pubkey)
 
 	peer, ok := net.ApprovedPeers[pubkey]
 	if !ok {
