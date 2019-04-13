@@ -17,7 +17,9 @@ func New(netman nm.NetworkManager) (Server, error) {
 
 	e.POST("/v1/network/:id/peers", s.registerPeer)
 	e.POST("/v1/network/:id/peers/approve", s.approvePeer)
+	e.POST("/v1/network/:id/peers/disapprove", s.disapprovePeer)
 	e.POST("/v1/network/:id/peers/activate", s.activatePeer)
+	e.POST("/v1/network/:id/peers/deactivate", s.deactivatePeer)
 
 	return s, nil
 }

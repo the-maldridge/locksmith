@@ -40,6 +40,19 @@ func (s *Server) approvePeer(c echo.Context) error {
 	return c.NoContent(http.StatusNoContent)
 }
 
+func (s *Server) disapprovePeer(c echo.Context) error {
+	netID, pubkey, err := s.parseKeyFromContext(c)
+	if err != nil {
+		return err
+	}
+
+	if err := s.nm.DisapprovePeer(netID, pubkey); err != nil {
+		return c.String(http.StatusBadRequest, err.Error())
+	}
+
+	return c.NoContent(http.StatusNoContent)
+}
+
 func (s *Server) activatePeer(c echo.Context) error {
 	netID, pubkey, err := s.parseKeyFromContext(c)
 	if err != nil {
@@ -47,6 +60,19 @@ func (s *Server) activatePeer(c echo.Context) error {
 	}
 
 	if err := s.nm.ActivatePeer(netID, pubkey); err != nil {
+		return c.String(http.StatusBadRequest, err.Error())
+	}
+
+	return c.NoContent(http.StatusNoContent)
+}
+
+func (s *Server) deactivatePeer(c echo.Context) error {
+	netID, pubkey, err := s.parseKeyFromContext(c)
+	if err != nil {
+		return err
+	}
+
+	if err := s.nm.DeactivatePeer(netID, pubkey); err != nil {
 		return c.String(http.StatusBadRequest, err.Error())
 	}
 
