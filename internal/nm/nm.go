@@ -127,7 +127,6 @@ func (nm *NetworkManager) ApprovePeer(netID, pubkey string) error {
 	net.ApprovedPeers[pubkey] = peer
 	delete(net.StagedPeers, pubkey)
 
-	log.Println(net.ApproveExpiry)
 	if net.ApproveExpiry != 0 {
 		// Approvals expire for this network
 		net.ApprovalExpirations[pubkey] = time.Now().Add(net.ApproveExpiry)
@@ -137,6 +136,10 @@ func (nm *NetworkManager) ApprovePeer(netID, pubkey string) error {
 		return err
 	}
 
+	log.Printf("Network '%s' has approved peer '%s'",
+		net.Name,
+		pubkey)
+
 	if strings.ToUpper(net.ActivateMode) == "AUTO" {
 		log.Printf("Network '%s' is automatically activating peer '%s'",
 			net.Name,
@@ -144,6 +147,33 @@ func (nm *NetworkManager) ApprovePeer(netID, pubkey string) error {
 		return nm.ActivatePeer(netID, pubkey)
 	}
 	return nil
+}
+
+// DisapprovePeer removes a peer from the approval set and deactivates
+// them as well, just in case.
+func (nm *NetworkManager) DisapprovePeer(netID, pubkey string) error {
+	net, err := nm.GetNet(netID)
+	if err != nil {
+		return err
+	}
+
+	peer, ok := net.ApprovedPeers[pubkey]
+	if !ok {
+		return ErrUnknownPeer
+	}
+
+	net.StagedPeers[pubkey] = peer
+	delete(net.ApprovedPeers, pubkey)
+	delete(net.ApprovalExpirations, pubkey)
+
+	if err := nm.s.PutNetwork(*net); err != nil {
+		return err
+	}
+
+	log.Printf("Network '%s' has disapproved peer '%s'",
+		net.Name,
+		pubkey)
+	return nm.DeactivatePeer(netID, pubkey)
 }
 
 // ActivatePeer recalls the peer from the ApprovedPeers map and
@@ -167,7 +197,30 @@ func (nm *NetworkManager) ActivatePeer(netID, pubkey string) error {
 
 	net.ActivePeers[peer.PubKey] = peer
 	go net.Sync()
+	log.Printf("Network '%s' has activated peer '%s'",
+		net.Name,
+		pubkey)
 	return nm.s.PutNetwork(*net)
+}
+
+// DeactivatePeer is used to immediately remove a peer from the active
+// set.
+func (nm *NetworkManager) DeactivatePeer(netID, pubkey string) error {
+	net, err := nm.GetNet(netID)
+	if err != nil {
+		return err
+	}
+
+	pri := len(net.ActivePeers)
+	delete(net.ActivePeers, pubkey)
+	delete(net.ActivationExpirations, pubkey)
+	if pri != len(net.ActivePeers) {
+		go net.Sync()
+	}
+	log.Printf("Network '%s' has deactivated peer '%s'",
+		net.Name,
+		pubkey)
+	return nil
 }
 
 func parseNetworkConfig() []Network {

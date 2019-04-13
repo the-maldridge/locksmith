@@ -27,16 +27,20 @@ func (nm *NetworkManager) expirationTimer() {
 // moves keys around as necessary.
 func (nm *NetworkManager) ProcessExpirations() {
 	for i := range nm.networks {
-		for key, expiration := range nm.networks[i].ApprovalExpirations {
-			if time.Now().After(expiration) {
-				log.Printf("Key '%s' has expired and is being staged", key)
-				delete(nm.networks[i].ApprovalExpirations, key)
-			}
-		}
 		for key, expiration := range nm.networks[i].ActivationExpirations {
 			if time.Now().After(expiration) {
-				log.Printf("Key '%s' has expired and is being deactivated", key)
+				if err := nm.DeactivatePeer(nm.networks[i].ID, key); err != nil {
+					log.Println("Error deactivating key:", err)
+				}
 				delete(nm.networks[i].ActivationExpirations, key)
+			}
+		}
+		for key, expiration := range nm.networks[i].ApprovalExpirations {
+			if time.Now().After(expiration) {
+				if err := nm.DisapprovePeer(nm.networks[i].ID, key); err != nil {
+					log.Println("Error dissaproving peer:", err)
+				}
+				delete(nm.networks[i].ApprovalExpirations, key)
 			}
 		}
 		nm.s.PutNetwork(nm.networks[i])

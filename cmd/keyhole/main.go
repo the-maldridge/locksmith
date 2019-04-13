@@ -19,6 +19,7 @@ func main() {
 		log.Fatal("Fatal error config file:", err)
 	}
 
+	log.Println(viper.GetDuration("nm.expiry.interval"))
 	log.Println("Keyhole is initializing")
 
 	nm, err := nm.New()

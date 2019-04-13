@@ -1,9 +1,13 @@
+[nm]
+  [nm.expiry]
+    interval = "5s"
+
 [[Network]]
 Name = "Default Network"
 ID = "default"
 Interface = "wg0"
-ApproveExpiry = "1h0m0s"
-ActivateExpiry = "5m"
+ApproveExpiry = "1m"
+ActivateExpiry = "30s"
 
 [[Network]]
 Name = "Another Network"
