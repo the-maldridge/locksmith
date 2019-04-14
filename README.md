@@ -3,8 +3,8 @@
 Who better to manage keys?
 
 Locksmith bolts on a more "enterprise" friendly management layer on
-top of the amazingly capable WireGuard VPN.  The basic ID here is that
-keys can be registered via a self-service system, approved
+top of the amazingly capable WireGuard VPN.  The basic idea here is
+that keys can be registered via a self-service system, approved
 asyncronously, and activated for limited time spans.
 
 ## Life of a Peer
@@ -19,11 +19,14 @@ After pre-approval, the key is considered staged.  In this stage keys
 cannot be activated for use.  To move from staged to approved one of
 two conditions must be satisfied.  Either the network must have
 auto-approval enabled where keys are truly self service, or an
-appropriately approved user must approve the key.
+appropriately approved user must approve the key.  A network may
+specify an approval lifetime which can be used to drive periodic
+review of keys.
 
 Once approved the key is ready for use and a peer can request
-activation of their key.  To request activation the peer must send an
-activation request to the server after which time the key will be
+activation of their key.  A network may also specify that activation
+is automatic after approval.  To request activation the peer must send
+an activation request to the server after which time the key will be
 activated for a configured amount of time.  For some networks this
 will be an infinite period of time, but the intention is that keys are
 validated for a bit longer than the average work day.
