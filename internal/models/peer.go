@@ -1,5 +1,9 @@
 package models
 
+import (
+	"net"
+)
+
 // Peer is an entity of some description that is requesting a key be
 // added to the server.
 type Peer struct {
@@ -16,4 +20,14 @@ type Peer struct {
 	// PubKey represents the key that is being requested to be
 	// installed.
 	PubKey string
+
+	// Store the addressing information for the Peer.
+	Address    []net.Addr
+	DNS        []net.Addr
+	AllowedIPs []net.IPNet
+
+	// NetworkPubKey is the pubkey of the "server" end of the
+	// connection.  This gets shipped to the client to allow it to
+	// configure the interface.
+	NetworkPubKey string
 }
