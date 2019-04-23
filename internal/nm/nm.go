@@ -37,6 +37,17 @@ func New() (NetworkManager, error) {
 		if nm.networks[i].ApproveExpiry != 0 || nm.networks[i].ActivateExpiry != 0 {
 			useExpiry = true
 		}
+
+		// Load Addressers for this network
+		for j := range nm.networks[i].AddrHandlers {
+			a, err := InitializeAddresser(nm.networks[i].AddrHandlers[j])
+			if err != nil {
+				log.Printf("Network '%s' error during AddrHandler initialization: '%s'", err)
+				continue
+			}
+			log.Printf("Network '%s' using '%s' addresser", nm.networks[i].ID, nm.networks[i].AddrHandlers[j])
+			nm.networks[i].Addressers = append(nm.networks[i].Addressers, a)
+		}
 	}
 	nm.networks = nm.loadPeers(nm.networks)
 

@@ -22,6 +22,10 @@ var (
 	// known to the system.
 	ErrUnknownStore = errors.New("No store with that name is known")
 
+	// ErrUnkownAddresser is returned if the reqeusted addresser
+	// isn't known to the system.
+	ErrUnknownAddresser = errors.New("No addresser with that name is known")
+
 	// ErrInternalError is returned when something fundamentally
 	// unexpected happens.
 	ErrInternalError = errors.New("An unspecified error has occured")

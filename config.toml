@@ -8,6 +8,9 @@ ID = "default"
 Interface = "wg0"
 ApproveExpiry = "1m"
 ActivateExpiry = "30s"
+AddrHandlers = [
+  "dummy",
+]
 
 [[Network]]
 Name = "Another Network"

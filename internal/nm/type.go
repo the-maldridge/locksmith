@@ -1,6 +1,7 @@
 package nm
 
 import (
+	"net"
 	"time"
 
 	"github.com/the-maldridge/locksmith/internal/models"
@@ -21,14 +22,18 @@ type Network struct {
 	ID             string
 	Interface      string
 	ApproveMode    string
+	AddrHandlers   []string
 	ApproveExpiry  time.Duration
 	ActivateMode   string
 	ActivateExpiry time.Duration
 
 	PreApproveHooks []string
+	Addressers      []Addresser
 
 	ApprovalExpirations   map[string]time.Time
 	ActivationExpirations map[string]time.Time
+
+	AddressTable map[net.Addr]models.Peer
 
 	StagedPeers   map[string]models.Peer
 	ApprovedPeers map[string]models.Peer
