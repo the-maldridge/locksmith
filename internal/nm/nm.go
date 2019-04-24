@@ -33,6 +33,7 @@ func New() (NetworkManager, error) {
 		nm.networks[i].ActivePeers = make(map[string]models.Peer)
 		nm.networks[i].ApprovalExpirations = make(map[string]time.Time)
 		nm.networks[i].ActivationExpirations = make(map[string]time.Time)
+		nm.networks[i].AddressTable = make(map[string]models.Peer)
 
 		if nm.networks[i].ApproveExpiry != 0 || nm.networks[i].ActivateExpiry != 0 {
 			useExpiry = true
@@ -135,6 +136,17 @@ func (nm *NetworkManager) ApprovePeer(netID, pubkey string) error {
 		return ErrUnknownPeer
 	}
 
+	// Assign address
+	for i := range net.Addressers {
+		ip, err := net.Addressers[i].AssignAddress(*net, peer)
+		if err != nil {
+			log.Printf("Error assigning address on net '%s': '%s'", net.ID, err)
+			continue
+		}
+		peer.Address = append(peer.Address, ip)
+		net.AddressTable[ip.String()] = peer
+	}
+
 	net.ApprovedPeers[pubkey] = peer
 	delete(net.StagedPeers, pubkey)
 
@@ -172,6 +184,19 @@ func (nm *NetworkManager) DisapprovePeer(netID, pubkey string) error {
 	if !ok {
 		return ErrUnknownPeer
 	}
+
+	// Remove address
+	for i := range net.Addressers {
+		err := net.Addressers[i].ReleaseAddress(peer)
+		if err != nil {
+			log.Printf("Error assigning address on net '%s': '%s'", net.ID, err)
+			continue
+		}
+	}
+	for i := range peer.Address {
+		delete(net.AddressTable, peer.Address[i].String())
+	}
+	peer.Address = nil
 
 	net.StagedPeers[pubkey] = peer
 	delete(net.ApprovedPeers, pubkey)

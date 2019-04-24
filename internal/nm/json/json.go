@@ -54,6 +54,7 @@ func (s *Store) GetNetwork(id string) (nm.Network, error) {
 
 // PutNetwork stores a network for later retrieval
 func (s *Store) PutNetwork(n nm.Network) error {
+	n.Addressers = nil
 	blob, err := json.Marshal(n)
 	if err != nil {
 		return err
