@@ -26,23 +26,44 @@ func (nm *NetworkManager) expirationTimer() {
 // ProcessExpirations handles expiration times that have passed and
 // moves keys around as necessary.
 func (nm *NetworkManager) ProcessExpirations() {
-	for i := range nm.networks {
-		for key, expiration := range nm.networks[i].ActivationExpirations {
-			if time.Now().After(expiration) {
-				if err := nm.DeactivatePeer(nm.networks[i].ID, key); err != nil {
-					log.Println("Error deactivating key:", err)
-				}
-				delete(nm.networks[i].ActivationExpirations, key)
-			}
+	for _, net := range nm.networks {
+		if net.ActivateExpiry > 0 {
+			nm.doActivationExpirations(net.ID)
 		}
-		for key, expiration := range nm.networks[i].ApprovalExpirations {
-			if time.Now().After(expiration) {
-				if err := nm.DisapprovePeer(nm.networks[i].ID, key); err != nil {
-					log.Println("Error dissaproving peer:", err)
-				}
-				delete(nm.networks[i].ApprovalExpirations, key)
-			}
+		if net.ApproveExpiry > 0 {
+			nm.doApprovalExpirations(net.ID)
 		}
-		nm.s.PutNetwork(nm.networks[i])
 	}
+}
+
+func (nm *NetworkManager) doActivationExpirations(id string) error {
+	net, err := nm.GetNet(id)
+	if err != nil {
+		return err
+	}
+	for key, expiration := range net.ActivationExpirations {
+		if time.Now().After(expiration) {
+			if err := nm.DeactivatePeer(id, key); err != nil {
+				log.Println("Error deactivating key:", err)
+			}
+			delete(net.ActivationExpirations, key)
+		}
+	}
+	return nm.StoreNet(net)
+}
+
+func (nm *NetworkManager) doApprovalExpirations(id string) error {
+	net, err := nm.GetNet(id)
+	if err != nil {
+		return err
+	}
+	for key, expiration := range net.ApprovalExpirations {
+		if time.Now().After(expiration) {
+			if err := nm.DisapprovePeer(id, key); err != nil {
+				log.Println("Error dissaproving peer:", err)
+			}
+			delete(net.ApprovalExpirations, key)
+		}
+	}
+	return nm.StoreNet(net)
 }

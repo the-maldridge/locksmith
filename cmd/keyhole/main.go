@@ -8,7 +8,7 @@ import (
 	"github.com/the-maldridge/locksmith/internal/http"
 	"github.com/the-maldridge/locksmith/internal/nm"
 	_ "github.com/the-maldridge/locksmith/internal/nm/dummy"
-	_ "github.com/the-maldridge/locksmith/internal/nm/json"
+	_ "github.com/the-maldridge/locksmith/internal/nm/state/json"
 )
 
 func main() {

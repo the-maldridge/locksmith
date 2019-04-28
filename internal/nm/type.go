@@ -1,42 +1,24 @@
 package nm
 
 import (
-	"time"
-
 	"github.com/the-maldridge/locksmith/internal/models"
+	"github.com/the-maldridge/locksmith/internal/nm/state"
 )
 
 // NetworkManager manages all the networks that are currently setup
 // and live.
 type NetworkManager struct {
-	networks []Network
-	s        Store
+	state.Store
 
+	networks        []models.NetConfig
 	preApproveHooks []PreApproveHook
+	addressers      map[string]Addresser
 }
 
 // Network represents a network from the configuration.
 type Network struct {
-	Name           string
-	ID             string
-	Interface      string
-	ApproveMode    string
-	AddrHandlers   []string
-	ApproveExpiry  time.Duration
-	ActivateMode   string
-	ActivateExpiry time.Duration
-
-	PreApproveHooks []string
-	Addressers      []Addresser
-
-	ApprovalExpirations   map[string]time.Time
-	ActivationExpirations map[string]time.Time
-
-	AddressTable map[string]models.Peer
-
-	StagedPeers   map[string]models.Peer
-	ApprovedPeers map[string]models.Peer
-	ActivePeers   map[string]models.Peer
+	models.NetConfig
+	models.NetState
 }
 
 // PreApproveHook represents a hook that gets called during the

@@ -8,50 +8,37 @@ import (
 	"github.com/spf13/viper"
 
 	"github.com/the-maldridge/locksmith/internal/models"
+	"github.com/the-maldridge/locksmith/internal/nm/state"
 )
 
 func init() {
-	viper.SetDefault("nm.store.impl", "json")
+	viper.SetDefault("nm.state.impl", "json")
 }
 
 // New returns an initialized instance ready to go.
 func New() (NetworkManager, error) {
 	nm := NetworkManager{}
 
-	s, err := InitializeStore(viper.GetString("nm.store.impl"))
+	s, err := state.Initialize(viper.GetString("nm.state.impl"))
 	if err != nil {
 		return NetworkManager{}, err
 	}
-	nm.s = s
+	nm.Store = s
 
 	nm.networks = parseNetworkConfig()
+	nm.initializeAddressers()
 
 	useExpiry := false
 	for i := range nm.networks {
-		nm.networks[i].StagedPeers = make(map[string]models.Peer)
-		nm.networks[i].ApprovedPeers = make(map[string]models.Peer)
-		nm.networks[i].ActivePeers = make(map[string]models.Peer)
-		nm.networks[i].ApprovalExpirations = make(map[string]time.Time)
-		nm.networks[i].ActivationExpirations = make(map[string]time.Time)
-		nm.networks[i].AddressTable = make(map[string]models.Peer)
-
 		if nm.networks[i].ApproveExpiry != 0 || nm.networks[i].ActivateExpiry != 0 {
 			useExpiry = true
-		}
-
-		// Load Addressers for this network
-		for j := range nm.networks[i].AddrHandlers {
-			a, err := InitializeAddresser(nm.networks[i].AddrHandlers[j])
-			if err != nil {
-				log.Printf("Network '%s' error during AddrHandler initialization: '%s'", err)
-				continue
-			}
-			log.Printf("Network '%s' using '%s' addresser", nm.networks[i].ID, nm.networks[i].AddrHandlers[j])
-			nm.networks[i].Addressers = append(nm.networks[i].Addressers, a)
+			// We can break now rather than continuing to
+			// iterate since this timer is used for all
+			// networks; its enabled if any one network
+			// needs it.
+			break
 		}
 	}
-	nm.networks = nm.loadPeers(nm.networks)
-
 	// Launch the expiration timer
 	if useExpiry {
 		nm.ProcessExpirations()
@@ -61,14 +48,45 @@ func New() (NetworkManager, error) {
 	return nm, nil
 }
 
-// GetNet returns the network if known or an error if not known.
-func (nm *NetworkManager) GetNet(id string) (*Network, error) {
-	for i := range nm.networks {
-		if nm.networks[i].ID == id {
-			return &nm.networks[i], nil
+func (nm *NetworkManager) initializeAddressers() {
+	requiredAddressers := make(map[string]int)
+	for _, net := range nm.networks {
+		for _, p := range net.AddrHandlers {
+			requiredAddressers[p]++
 		}
 	}
-	return &Network{}, ErrUnknownNetwork
+	nm.addressers = make(map[string]Addresser)
+	for k := range requiredAddressers {
+		a, err := InitializeAddresser(k)
+		if err != nil {
+			log.Printf("Addresser '%s' is unavailable: '%s'.", k, err)
+			continue
+		}
+		nm.addressers[k] = a
+	}
+}
+
+// GetNet returns the network if known or an error if not known.
+func (nm *NetworkManager) GetNet(id string) (Network, error) {
+	net := Network{}
+
+	for i := range nm.networks {
+		if nm.networks[i].ID == id {
+			net.NetConfig = nm.networks[i]
+			s, err := nm.GetState(net.ID)
+			if err != nil {
+				return Network{}, err
+			}
+			net.NetState = s
+			return net, nil
+		}
+	}
+	return Network{}, ErrUnknownNetwork
+}
+
+// StoreNet is a convenience function that stores network state.
+func (nm *NetworkManager) StoreNet(net Network) error {
+	return nm.PutState(net.ID, net.NetState)
 }
 
 // AttemptNetworkRegistration as the name implies attempts to register
@@ -93,7 +111,7 @@ func (nm *NetworkManager) AttemptNetworkRegistration(netID string, client models
 		return err
 	}
 
-	return nm.s.PutNetwork(*net)
+	return nm.StoreNet(net)
 }
 
 // stagePeer takes a pre-approved peer and stages them.  If the
@@ -110,7 +128,7 @@ func (nm *NetworkManager) stagePeer(netID string, client models.Peer) error {
 		net.Name,
 		client.PubKey)
 
-	if err := nm.s.PutNetwork(*net); err != nil {
+	if err := nm.StoreNet(net); err != nil {
 		return err
 	}
 
@@ -137,8 +155,8 @@ func (nm *NetworkManager) ApprovePeer(netID, pubkey string) error {
 	}
 
 	// Assign address
-	for i := range net.Addressers {
-		ip, err := net.Addressers[i].AssignAddress(*net, peer)
+	for _, h := range net.AddrHandlers {
+		ip, err := nm.addressers[h].AssignAddress(net, peer)
 		if err != nil {
 			log.Printf("Error assigning address on net '%s': '%s'", net.ID, err)
 			continue
@@ -155,7 +173,7 @@ func (nm *NetworkManager) ApprovePeer(netID, pubkey string) error {
 		net.ApprovalExpirations[pubkey] = time.Now().Add(net.ApproveExpiry)
 	}
 
-	if err := nm.s.PutNetwork(*net); err != nil {
+	if err := nm.StoreNet(net); err != nil {
 		return err
 	}
 
@@ -186,8 +204,8 @@ func (nm *NetworkManager) DisapprovePeer(netID, pubkey string) error {
 	}
 
 	// Remove address
-	for i := range net.Addressers {
-		err := net.Addressers[i].ReleaseAddress(peer)
+	for _, h := range net.AddrHandlers {
+		err := nm.addressers[h].ReleaseAddress(peer)
 		if err != nil {
 			log.Printf("Error assigning address on net '%s': '%s'", net.ID, err)
 			continue
@@ -202,7 +220,7 @@ func (nm *NetworkManager) DisapprovePeer(netID, pubkey string) error {
 	delete(net.ApprovedPeers, pubkey)
 	delete(net.ApprovalExpirations, pubkey)
 
-	if err := nm.s.PutNetwork(*net); err != nil {
+	if err := nm.StoreNet(net); err != nil {
 		return err
 	}
 
@@ -236,7 +254,7 @@ func (nm *NetworkManager) ActivatePeer(netID, pubkey string) error {
 	log.Printf("Network '%s' has activated peer '%s'",
 		net.Name,
 		pubkey)
-	return nm.s.PutNetwork(*net)
+	return nm.StoreNet(net)
 }
 
 // DeactivatePeer is used to immediately remove a peer from the active
@@ -256,38 +274,14 @@ func (nm *NetworkManager) DeactivatePeer(netID, pubkey string) error {
 	log.Printf("Network '%s' has deactivated peer '%s'",
 		net.Name,
 		pubkey)
-	return nil
+	return nm.StoreNet(net)
 }
 
-func parseNetworkConfig() []Network {
-	var out []Network
+func parseNetworkConfig() []models.NetConfig {
+	var out []models.NetConfig
 	if err := viper.UnmarshalKey("Network", &out); err != nil {
 		log.Printf("Error loading networks: %s", err)
 		return nil
 	}
 	return out
-}
-
-func (nm *NetworkManager) loadPeers(n []Network) []Network {
-	for i := range nm.networks {
-		t, err := nm.s.GetNetwork(n[i].ID)
-		if err != nil {
-			log.Println("Error reloading network:", n[i].ID)
-			continue
-		}
-		n[i].StagedPeers = t.StagedPeers
-		n[i].ApprovedPeers = t.ApprovedPeers
-		n[i].ActivePeers = t.ActivePeers
-
-		n[i].ApprovalExpirations = t.ApprovalExpirations
-		n[i].ActivationExpirations = t.ActivationExpirations
-
-		log.Printf("Network '%s' loaded with %d staged, %d approved, %d active",
-			n[i].ID,
-			len(t.StagedPeers),
-			len(t.ApprovedPeers),
-			len(t.ActivePeers),
-		)
-	}
-	return n
 }
