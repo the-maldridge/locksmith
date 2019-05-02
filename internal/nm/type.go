@@ -2,6 +2,7 @@ package nm
 
 import (
 	"github.com/the-maldridge/locksmith/internal/models"
+	"github.com/the-maldridge/locksmith/internal/nm/addresser"
 	"github.com/the-maldridge/locksmith/internal/nm/state"
 )
 
@@ -12,7 +13,7 @@ type NetworkManager struct {
 
 	networks        []models.NetConfig
 	preApproveHooks []PreApproveHook
-	addressers      map[string]Addresser
+	addressers      map[string]addresser.Addresser
 }
 
 // Network represents a network from the configuration.

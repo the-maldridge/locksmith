@@ -1,4 +1,4 @@
-package nm
+package addresser
 
 import (
 	"net"
@@ -16,24 +16,24 @@ import (
 // be process-local, instead consulting an external IPAM solution to
 // derive the addresses for the given peer and network.
 type Addresser interface {
-	AssignAddress(Network, models.Peer) (net.IP, error)
-	ReleaseAddress(models.Peer) error
+	Assign(models.NetState, models.Peer) (net.IP, error)
+	Release(models.Peer) error
 }
 
-// An AddresserFactory returns a ready to use addresser
-type AddresserFactory func() (Addresser, error)
+// An Factory returns a ready to use addresser
+type Factory func() (Addresser, error)
 
 var (
-	addressers map[string]AddresserFactory
+	addressers map[string]Factory
 )
 
 func init() {
-	addressers = make(map[string]AddresserFactory)
+	addressers = make(map[string]Factory)
 }
 
-// RegisterAddresser registers the addresser factory into the list
-// that can be recalled later.
-func RegisterAddresser(name string, f AddresserFactory) {
+// Register registers the addresser factory into the list that can be
+// recalled later.
+func Register(name string, f Factory) {
 	if _, ok := addressers[name]; ok {
 		// Already registered
 		return
@@ -41,9 +41,9 @@ func RegisterAddresser(name string, f AddresserFactory) {
 	addressers[name] = f
 }
 
-// InitializeAddresser safely attempts to initialize an addresser or
-// returns an ErrUnknownAddresser trying.
-func InitializeAddresser(name string) (Addresser, error) {
+// Initialize safely attempts to initialize an addresser or returns an
+// ErrUnknownAddresser trying.
+func Initialize(name string) (Addresser, error) {
 	a, ok := addressers[name]
 	if !ok {
 		return nil, ErrUnknownAddresser

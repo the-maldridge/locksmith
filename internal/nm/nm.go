@@ -8,6 +8,7 @@ import (
 	"github.com/spf13/viper"
 
 	"github.com/the-maldridge/locksmith/internal/models"
+	"github.com/the-maldridge/locksmith/internal/nm/addresser"
 	"github.com/the-maldridge/locksmith/internal/nm/state"
 )
 
@@ -55,9 +56,9 @@ func (nm *NetworkManager) initializeAddressers() {
 			requiredAddressers[p]++
 		}
 	}
-	nm.addressers = make(map[string]Addresser)
+	nm.addressers = make(map[string]addresser.Addresser)
 	for k := range requiredAddressers {
-		a, err := InitializeAddresser(k)
+		a, err := addresser.Initialize(k)
 		if err != nil {
 			log.Printf("Addresser '%s' is unavailable: '%s'.", k, err)
 			continue
@@ -156,7 +157,7 @@ func (nm *NetworkManager) ApprovePeer(netID, pubkey string) error {
 
 	// Assign address
 	for _, h := range net.AddrHandlers {
-		ip, err := nm.addressers[h].AssignAddress(net, peer)
+		ip, err := nm.addressers[h].Assign(net.NetState, peer)
 		if err != nil {
 			log.Printf("Error assigning address on net '%s': '%s'", net.ID, err)
 			continue
@@ -205,7 +206,7 @@ func (nm *NetworkManager) DisapprovePeer(netID, pubkey string) error {
 
 	// Remove address
 	for _, h := range net.AddrHandlers {
-		err := nm.addressers[h].ReleaseAddress(peer)
+		err := nm.addressers[h].Release(peer)
 		if err != nil {
 			log.Printf("Error assigning address on net '%s': '%s'", net.ID, err)
 			continue
