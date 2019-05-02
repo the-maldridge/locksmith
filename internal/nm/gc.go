@@ -49,7 +49,7 @@ func (nm *NetworkManager) doActivationExpirations(id string) error {
 			delete(net.ActivationExpirations, key)
 		}
 	}
-	return nm.StoreNet(net)
+	return nil
 }
 
 func (nm *NetworkManager) doApprovalExpirations(id string) error {
@@ -65,5 +65,5 @@ func (nm *NetworkManager) doApprovalExpirations(id string) error {
 			delete(net.ApprovalExpirations, key)
 		}
 	}
-	return nm.StoreNet(net)
+	return nil
 }
