@@ -17,7 +17,7 @@ import (
 // derive the addresses for the given peer and network.
 type Addresser interface {
 	Assign(models.NetState, models.Peer) (net.IP, error)
-	Release(models.Peer) error
+	Release(models.Peer) (net.IP, error)
 }
 
 // An Factory returns a ready to use addresser

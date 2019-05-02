@@ -164,6 +164,7 @@ func (nm *NetworkManager) ApprovePeer(netID, pubkey string) error {
 		}
 		peer.Address = append(peer.Address, ip)
 		net.AddressTable[ip.String()] = peer
+		log.Printf("Peer '%s' has been issued address '%s' on net '%s'", peer.PubKey, ip, net.ID)
 	}
 
 	net.ApprovedPeers[pubkey] = peer
@@ -206,14 +207,18 @@ func (nm *NetworkManager) DisapprovePeer(netID, pubkey string) error {
 
 	// Remove address
 	for _, h := range net.AddrHandlers {
-		err := nm.addressers[h].Release(peer)
+		addr, err := nm.addressers[h].Release(peer)
 		if err != nil {
-			log.Printf("Error assigning address on net '%s': '%s'", net.ID, err)
+			log.Printf("Error releasing address on net '%s': '%s'", net.ID, err)
 			continue
 		}
+		peer.Address = delAddr(peer.Address, addr)
+		delete(net.AddressTable, addr.String())
+		log.Printf("Address '%s' on net '%s' has been released", addr, net.ID)
 	}
-	for i := range peer.Address {
-		delete(net.AddressTable, peer.Address[i].String())
+	for _, ip := range peer.Address {
+		log.Printf("Peer '%s' on net '%s' left dangling address '%s'!", peer.PubKey, net.ID, ip)
+		delete(net.AddressTable, ip.String())
 	}
 	peer.Address = nil
 

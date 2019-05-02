@@ -24,6 +24,6 @@ func (*Addresser) Assign(models.NetState, models.Peer) (net.IP, error) {
 }
 
 // Release releases the specified address back into the pool.
-func (*Addresser) Release(models.Peer) error {
-	return nil
+func (*Addresser) Release(models.Peer) (net.IP, error) {
+	return net.ParseIP("1.1.1.1"), nil
 }
