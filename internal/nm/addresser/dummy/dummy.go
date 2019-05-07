@@ -19,11 +19,11 @@ func newAddresser() (addresser.Addresser, error) {
 }
 
 // Assign always assigns 1.1.1.1
-func (*Addresser) Assign(models.NetState, models.Peer) (net.IP, error) {
-	return net.ParseIP("1.1.1.1"), nil
+func (*Addresser) Assign(models.NetState, models.Peer) (net.IPNet, error) {
+	return net.IPNet{IP: net.ParseIP("1.1.1.1")}, nil
 }
 
 // Release releases the specified address back into the pool.
-func (*Addresser) Release(models.Peer) (net.IP, error) {
-	return net.ParseIP("1.1.1.1"), nil
+func (*Addresser) Release(models.Peer) (net.IPNet, error) {
+	return net.IPNet{IP: net.ParseIP("1.1.1.1")}, nil
 }

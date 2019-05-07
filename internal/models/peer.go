@@ -22,7 +22,7 @@ type Peer struct {
 	PubKey string
 
 	// Store the addressing information for the Peer.
-	Address    []net.IP
+	Address    []net.IPNet
 	DNS        []net.IP
 	AllowedIPs []net.IPNet
 

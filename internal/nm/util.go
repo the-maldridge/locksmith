@@ -2,10 +2,10 @@ package nm
 
 import "net"
 
-func delAddr(ips []net.IP, tgt net.IP) []net.IP {
-	var out []net.IP
+func delAddr(ips []net.IPNet, tgt net.IPNet) []net.IPNet {
+	var out []net.IPNet
 	for _, i := range ips {
-		if i.Equal(tgt) {
+		if i.IP.Equal(tgt.IP) {
 			continue
 		}
 		out = append(out, i)
