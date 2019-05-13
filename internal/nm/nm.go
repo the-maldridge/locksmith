@@ -8,7 +8,7 @@ import (
 	"github.com/spf13/viper"
 
 	"github.com/the-maldridge/locksmith/internal/models"
-	"github.com/the-maldridge/locksmith/internal/nm/addresser"
+	"github.com/the-maldridge/locksmith/internal/nm/ipam"
 	"github.com/the-maldridge/locksmith/internal/nm/state"
 )
 
@@ -27,7 +27,7 @@ func New() (NetworkManager, error) {
 	nm.Store = s
 
 	nm.networks = parseNetworkConfig()
-	nm.initializeAddressers()
+	nm.initializeIPAM()
 
 	useExpiry := false
 	for i := range nm.networks {
@@ -49,21 +49,21 @@ func New() (NetworkManager, error) {
 	return nm, nil
 }
 
-func (nm *NetworkManager) initializeAddressers() {
-	requiredAddressers := make(map[string]int)
+func (nm *NetworkManager) initializeIPAM() {
+	requiredIPAM := make(map[string]int)
 	for _, net := range nm.networks {
-		for _, p := range net.AddrHandlers {
-			requiredAddressers[p]++
+		for _, p := range net.IPAM {
+			requiredIPAM[p]++
 		}
 	}
-	nm.addressers = make(map[string]addresser.Addresser)
-	for k := range requiredAddressers {
-		a, err := addresser.Initialize(k)
+	nm.ipam = make(map[string]ipam.IPAM)
+	for k := range requiredIPAM {
+		a, err := ipam.Initialize(k)
 		if err != nil {
 			log.Printf("Addresser '%s' is unavailable: '%s'.", k, err)
 			continue
 		}
-		nm.addressers[k] = a
+		nm.ipam[k] = a
 	}
 }
 
@@ -155,17 +155,7 @@ func (nm *NetworkManager) ApprovePeer(netID, pubkey string) error {
 		return ErrUnknownPeer
 	}
 
-	// Assign address
-	for _, h := range net.AddrHandlers {
-		ip, err := nm.addressers[h].Assign(net.NetState, peer)
-		if err != nil {
-			log.Printf("Error assigning address on net '%s': '%s'", net.ID, err)
-			continue
-		}
-		peer.Address = append(peer.Address, ip)
-		net.AddressTable[ip.String()] = peer
-		log.Printf("Peer '%s' has been issued address '%s' on net '%s'", peer.PubKey, ip, net.ID)
-	}
+	nm.configurePeer(&net, &peer)
 
 	net.ApprovedPeers[pubkey] = peer
 	delete(net.StagedPeers, pubkey)
@@ -205,26 +195,7 @@ func (nm *NetworkManager) DisapprovePeer(netID, pubkey string) error {
 		return ErrUnknownPeer
 	}
 
-	// Remove address
-	for _, h := range net.AddrHandlers {
-		addr, err := nm.addressers[h].Release(peer)
-		if err != nil {
-			log.Printf("Error releasing address on net '%s': '%s'", net.ID, err)
-			continue
-		}
-		peer.Address = delAddr(peer.Address, addr)
-		delete(net.AddressTable, addr.String())
-		log.Printf("Address '%s' on net '%s' has been released", addr, net.ID)
-	}
-	for _, ip := range peer.Address {
-		log.Printf("Peer '%s' on net '%s' left dangling address '%s'!", peer.PubKey, net.ID, ip)
-		delete(net.AddressTable, ip.String())
-	}
-	peer.Address = nil
-
-	net.StagedPeers[pubkey] = peer
-	delete(net.ApprovedPeers, pubkey)
-	delete(net.ApprovalExpirations, pubkey)
+	nm.deconfigurePeer(&net, &peer)
 
 	if err := nm.StoreNet(net); err != nil {
 		return err
@@ -289,5 +260,6 @@ func parseNetworkConfig() []models.NetConfig {
 		log.Printf("Error loading networks: %s", err)
 		return nil
 	}
+	log.Println(out)
 	return out
 }

@@ -1,4 +1,4 @@
-package addresser
+package ipam
 
 import (
 	"errors"

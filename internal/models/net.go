@@ -17,7 +17,10 @@ type NetConfig struct {
 	ActivateExpiry time.Duration
 
 	PreApproveHooks []string
-	AddrHandlers    []string
+	IPAM            []string
+
+	DNS        []string
+	AllowedIPs []string
 }
 
 // NetState holds all the runtime state needed to compute anything for
@@ -27,7 +30,7 @@ type NetState struct {
 	ApprovalExpirations   map[string]time.Time
 	ActivationExpirations map[string]time.Time
 
-	AddressTable map[string]Peer
+	AddressTable map[string]string
 
 	StagedPeers   map[string]Peer
 	ApprovedPeers map[string]Peer
