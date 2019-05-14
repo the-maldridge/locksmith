@@ -2,6 +2,7 @@ package nm
 
 import (
 	"github.com/the-maldridge/locksmith/internal/models"
+	"github.com/the-maldridge/locksmith/internal/nm/driver"
 	"github.com/the-maldridge/locksmith/internal/nm/ipam"
 	"github.com/the-maldridge/locksmith/internal/nm/state"
 )
@@ -14,6 +15,7 @@ type NetworkManager struct {
 	networks        []models.NetConfig
 	preApproveHooks []PreApproveHook
 	ipam            map[string]ipam.IPAM
+	driver          map[string]driver.Driver
 }
 
 // Network represents a network from the configuration.

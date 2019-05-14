@@ -11,6 +11,7 @@ type NetConfig struct {
 	Name           string
 	ID             string
 	Interface      string
+	Driver         string
 	ApproveMode    string
 	ApproveExpiry  time.Duration
 	ActivateMode   string

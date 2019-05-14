@@ -31,13 +31,12 @@ func (nm *NetworkManager) configurePeer(wnet *Network, peer *models.Peer) {
 		peer.Addresses = append(peer.Addresses, ip)
 
 		peerAddr := net.IPNet{
-			IP: ip,
+			IP:   ip,
 			Mask: netinfo.ClientMask,
 		}
 		wnet.AddressTable[peerAddr.String()] = peer.PubKey
 		log.Printf("Peer '%s' has been issued address '%s' on net '%s'", peer.PubKey, ip, wnet.ID)
 
-		
 		// Copy DNS settings for this network from IPAM
 		for _, resolver := range netinfo.DNS {
 			peer.DNS = append(peer.DNS, resolver)
@@ -85,7 +84,7 @@ func (nm *NetworkManager) deconfigurePeer(wnet *Network, peer *models.Peer) {
 			delete(wnet.AddressTable, k)
 		}
 	}
-	
+
 	peer.Addresses = nil
 	peer.DNS = nil
 	peer.AllowedIPs = nil

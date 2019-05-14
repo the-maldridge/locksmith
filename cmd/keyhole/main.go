@@ -7,6 +7,7 @@ import (
 
 	"github.com/the-maldridge/locksmith/internal/http"
 	"github.com/the-maldridge/locksmith/internal/nm"
+	_ "github.com/the-maldridge/locksmith/internal/nm/driver/local"
 	_ "github.com/the-maldridge/locksmith/internal/nm/ipam/dummy"
 	_ "github.com/the-maldridge/locksmith/internal/nm/state/json"
 )
@@ -20,7 +21,6 @@ func main() {
 		log.Fatal("Fatal error config file:", err)
 	}
 
-	log.Println(viper.GetDuration("nm.expiry.interval"))
 	log.Println("Keyhole is initializing")
 
 	nm, err := nm.New()

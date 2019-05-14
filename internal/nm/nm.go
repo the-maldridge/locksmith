@@ -8,6 +8,7 @@ import (
 	"github.com/spf13/viper"
 
 	"github.com/the-maldridge/locksmith/internal/models"
+	"github.com/the-maldridge/locksmith/internal/nm/driver"
 	"github.com/the-maldridge/locksmith/internal/nm/ipam"
 	"github.com/the-maldridge/locksmith/internal/nm/state"
 )
@@ -28,6 +29,7 @@ func New() (NetworkManager, error) {
 
 	nm.networks = parseNetworkConfig()
 	nm.initializeIPAM()
+	nm.initializeDrivers()
 
 	useExpiry := false
 	for i := range nm.networks {
@@ -67,27 +69,24 @@ func (nm *NetworkManager) initializeIPAM() {
 	}
 }
 
-// GetNet returns the network if known or an error if not known.
-func (nm *NetworkManager) GetNet(id string) (Network, error) {
-	net := Network{}
-
-	for i := range nm.networks {
-		if nm.networks[i].ID == id {
-			net.NetConfig = nm.networks[i]
-			s, err := nm.GetState(net.ID)
-			if err != nil {
-				return Network{}, err
-			}
-			net.NetState = s
-			return net, nil
+func (nm *NetworkManager) initializeDrivers() {
+	requiredDrivers := make(map[string]int)
+	for _, net := range nm.networks {
+		if net.Driver != "" {
+			requiredDrivers[net.Driver]++
+			continue
 		}
+		requiredDrivers["LOCAL"]++
 	}
-	return Network{}, ErrUnknownNetwork
-}
-
-// StoreNet is a convenience function that stores network state.
-func (nm *NetworkManager) StoreNet(net Network) error {
-	return nm.PutState(net.ID, net.NetState)
+	nm.driver = make(map[string]driver.Driver)
+	for k := range requiredDrivers {
+		d, err := driver.Initialize(k)
+		if err != nil {
+			log.Printf("Driver '%s' is unavilable: '%s'.", k, err)
+			continue
+		}
+		nm.driver[k] = d
+	}
 }
 
 // AttemptNetworkRegistration as the name implies attempts to register
@@ -225,9 +224,14 @@ func (nm *NetworkManager) ActivatePeer(netID, pubkey string) error {
 		// Activation expiry is active for this network.
 		net.ActivationExpirations[pubkey] = time.Now().Add(net.ActivateExpiry)
 	}
-
 	net.ActivePeers[peer.PubKey] = peer
-	go net.Sync()
+
+	// Sync the network state down to the network driver
+	if err := nm.SyncNet(net); err != nil {
+		log.Println(err)
+		return err
+	}
+
 	log.Printf("Network '%s' has activated peer '%s'",
 		net.Name,
 		pubkey)
@@ -246,7 +250,10 @@ func (nm *NetworkManager) DeactivatePeer(netID, pubkey string) error {
 	delete(net.ActivePeers, pubkey)
 	delete(net.ActivationExpirations, pubkey)
 	if pri != len(net.ActivePeers) {
-		go net.Sync()
+		// Sync the network state down to the network driver
+		if err := nm.SyncNet(net); err != nil {
+			return err
+		}
 	}
 	log.Printf("Network '%s' has deactivated peer '%s'",
 		net.Name,
@@ -260,6 +267,5 @@ func parseNetworkConfig() []models.NetConfig {
 		log.Printf("Error loading networks: %s", err)
 		return nil
 	}
-	log.Println(out)
 	return out
 }
