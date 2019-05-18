@@ -11,7 +11,5 @@ require (
 	github.com/spf13/viper v1.3.2
 	github.com/stretchr/testify v1.3.0 // indirect
 	github.com/valyala/fasttemplate v1.0.1 // indirect
-	golang.org/x/crypto v0.0.0-20190510104115-cbcb75029529 // indirect
-	golang.org/x/net v0.0.0-20190509222800-a4d6f7feada5 // indirect
-	golang.org/x/sys v0.0.0-20190514135907-3a4b5fb9f71f // indirect
+	golang.zx2c4.com/wireguard/wgctrl v0.0.0-20190517012301-85b5bd4a0fcc
 )
