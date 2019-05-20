@@ -1,6 +1,7 @@
 package keyhole
 
 import (
+	"errors"
 	"log"
 	"net"
 
@@ -38,6 +39,8 @@ func (k *Keyhole) generateConfig(ic InterfaceConfig) (*wgtypes.Config, error) {
 	chkPeers := activePeers.Intersect(wantPeers)
 
 	update := []wgtypes.PeerConfig{}
+
+	// Construct the removal struct for a peer being deleted
 	for p := range delPeers.Iterator().C {
 		s, ok := p.(string)
 		if !ok {
@@ -56,6 +59,7 @@ func (k *Keyhole) generateConfig(ic InterfaceConfig) (*wgtypes.Config, error) {
 		})
 	}
 
+	// Construct the addition struct for a new peer
 	for p := range newPeers.Iterator().C {
 		s, ok := p.(string)
 		if !ok {
@@ -63,30 +67,52 @@ func (k *Keyhole) generateConfig(ic InterfaceConfig) (*wgtypes.Config, error) {
 			continue
 		}
 
-		for _, peer := range ic.Peers {
-			if peer.Pubkey == s {
-				wgpeer := wgtypes.PeerConfig{}
+		peer, err := wgPeerFromKeyholePeers(s, ic.Peers)
+		if err != nil {
+			log.Println(err)
+			continue
+		}
+		update = append(update, *peer)
+	}
 
-				// Stick the key in
-				k, err := wgtypes.ParseKey(peer.Pubkey)
-				if err != nil {
-					log.Println("Unparsable key in update:", peer.Pubkey)
-				}
-				wgpeer.PublicKey = k
+	// Check the AllowedIPs for other peers to ensure they have not changed.
+	for p := range chkPeers.Iterator().C {
+		s, ok := p.(string)
+		if !ok {
+			log.Println("Not a key in existing peer!", p)
+			continue
+		}
 
-				for _, cidrStr := range peer.AllowedIPs {
-					_, cidr, err := net.ParseCIDR(cidrStr)
-					if err != nil {
-						log.Println("Unparsable cidr in peer:", cidrStr)
-						continue
-					}
-					wgpeer.AllowedIPs = append(wgpeer.AllowedIPs, *cidr)
-				}
-
-				// Add the new peer
-				update = append(update, wgpeer)
+		// Get the existing peer
+		active := wgtypes.PeerConfig{}
+		for _, bp := range baseCfg.Peers {
+			if bp.PublicKey.String() == s {
+				active.PublicKey = bp.PublicKey
+				active.AllowedIPs = bp.AllowedIPs
 				break
 			}
+
+		}
+
+		// Get the new peer
+		want, err := wgPeerFromKeyholePeers(s, ic.Peers)
+		if err != nil {
+			log.Println(err)
+			continue
+		}
+
+		s1 := mapset.NewSet()
+		s2 := mapset.NewSet()
+		for _, aip := range active.AllowedIPs {
+			s1.Add(aip.String())
+		}
+		for _, aip := range want.AllowedIPs {
+			s2.Add(aip.String())
+		}
+
+		if !s1.Equal(s2) {
+			want.ReplaceAllowedIPs = true
+			update = append(update, *want)
 		}
 	}
 
@@ -97,4 +123,30 @@ func (k *Keyhole) generateConfig(ic InterfaceConfig) (*wgtypes.Config, error) {
 		chkPeers.Cardinality())
 
 	return &wgtypes.Config{Peers: update}, nil
+}
+
+func wgPeerFromKeyholePeers(key string, peers []Peer) (*wgtypes.PeerConfig, error) {
+	for _, peer := range peers {
+		if peer.Pubkey == key {
+			wgpeer := wgtypes.PeerConfig{}
+
+			// Stick the key in
+			k, err := wgtypes.ParseKey(peer.Pubkey)
+			if err != nil {
+				return nil, errors.New("Bad key")
+			}
+			wgpeer.PublicKey = k
+
+			for _, cidrStr := range peer.AllowedIPs {
+				_, cidr, err := net.ParseCIDR(cidrStr)
+				if err != nil {
+					log.Println("Unparsable cidr in peer:", cidrStr)
+					continue
+				}
+				wgpeer.AllowedIPs = append(wgpeer.AllowedIPs, *cidr)
+			}
+			return &wgpeer, nil
+		}
+	}
+	return nil, errors.New("peer not found")
 }
