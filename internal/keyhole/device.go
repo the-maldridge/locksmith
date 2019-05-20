@@ -1,12 +1,12 @@
 package keyhole
 
 import (
-	"log"
+	"errors"
 	"fmt"
+	"log"
 	"net"
 	"net/http"
 	"net/rpc"
-	"errors"
 
 	"golang.zx2c4.com/wireguard/wgctrl"
 )
@@ -56,6 +56,21 @@ func (k *Keyhole) DeviceInfo(name string, reply *InterfaceInfo) error {
 		reply.ActivePeers = append(reply.ActivePeers, dev.Peers[i].PublicKey.String())
 	}
 	return nil
+}
+
+// ConfigureDevice configues the device with the provided peerlist by
+// computing the difference between the peers that are known and those
+// that must be added or removed.
+func (k *Keyhole) ConfigureDevice(dc InterfaceConfig, reply *string) error {
+	if !k.isKnownDevice(dc.Name) {
+		return errors.New("Unknown device")
+	}
+
+	cfg, err := k.generateConfig(dc)
+	if err != nil {
+		return err
+	}
+	return k.wg.ConfigureDevice(dc.Name, *cfg)
 }
 
 // Serve serves the keyhole service on a given port and bind.
