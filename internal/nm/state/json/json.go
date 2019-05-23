@@ -41,8 +41,11 @@ func (s *Store) GetState(id string) (models.NetState, error) {
 	in, err := ioutil.ReadFile(filepath.Join(s.root, fmt.Sprintf("%s.json", id)))
 	if err != nil {
 		if os.IsNotExist(err) {
-			return models.NetState{}, nm.ErrUnknownNetwork
+			nstate := models.NetState{}
+			nstate.Initialize()
+			return nstate, nil
 		}
+		return models.NetState{}, nm.ErrInternalError
 	}
 
 	state := models.NetState{}
@@ -50,7 +53,6 @@ func (s *Store) GetState(id string) (models.NetState, error) {
 		log.Println(err)
 		return models.NetState{}, nm.ErrInternalError
 	}
-
 	return state, nil
 }
 

@@ -107,11 +107,7 @@ func (nm *NetworkManager) AttemptNetworkRegistration(netID string, client models
 		}
 	}
 
-	if err := nm.stagePeer(netID, client); err != nil {
-		return err
-	}
-
-	return nm.StoreNet(net)
+	return nm.stagePeer(netID, client)
 }
 
 // stagePeer takes a pre-approved peer and stages them.  If the
