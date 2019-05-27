@@ -31,7 +31,7 @@ func (*Dummy) NetInfo() ipam.NetInfo {
 
 // Assign always assigns 192.168.0.2
 func (*Dummy) Assign(models.NetState, models.Peer) (net.IP, error) {
-	return net.ParseIP("192.18.0.2"), nil
+	return net.ParseIP("192.168.0.2"), nil
 }
 
 // Release releases the specified address back into the pool.

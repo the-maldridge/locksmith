@@ -1,6 +1,10 @@
 package keyhole
 
 import (
+	"log"
+
+	"github.com/spf13/viper"
+
 	"github.com/the-maldridge/locksmith/internal/keyhole"
 	"github.com/the-maldridge/locksmith/internal/models"
 	"github.com/the-maldridge/locksmith/internal/nm/driver"
@@ -12,7 +16,7 @@ type Driver struct {
 }
 
 func init() {
-	driver.Register("keyhole", new)
+	driver.Register("KEYHOLE", new)
 }
 
 func new() (driver.Driver, error) {
@@ -21,5 +25,37 @@ func new() (driver.Driver, error) {
 
 // Configure passes off data to keyhole to configure it.
 func (d *Driver) Configure(name string, state models.NetState) error {
+	invertMap := make(map[string][]string)
+	for addr, key := range state.AddressTable {
+		invertMap[key] = append(invertMap[key], addr)
+	}
+
+	peers := []keyhole.Peer{}
+	for key := range state.ActivePeers {
+		p := keyhole.Peer{
+			Pubkey:     key,
+			AllowedIPs: invertMap[key],
+		}
+		peers = append(peers, p)
+	}
+
+	ic := keyhole.InterfaceConfig{
+		Name:  name,
+		Peers: peers,
+	}
+
+	for _, server := range viper.GetStringSlice("keyhole.servers") {
+		c, err := keyhole.NewClient(server)
+		if err != nil {
+			log.Println("Error initializing keyhole:", err)
+			continue
+		}
+		_, err = c.ConfigureDevice(ic)
+		if err != nil {
+			log.Println("Error configuring interface:", err)
+			return err
+		}
+	}
+
 	return nil
 }

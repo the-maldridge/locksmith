@@ -10,7 +10,7 @@ import (
 func (nm *NetworkManager) SyncNet(wnet Network) error {
 	req := wnet.Driver
 	if req == "" {
-		req = "LOCAL"
+		req = "KEYHOLE"
 	}
 
 	drvr, ok := nm.driver[req]

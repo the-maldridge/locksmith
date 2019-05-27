@@ -15,12 +15,12 @@ func New(netman nm.NetworkManager) (Server, error) {
 		nm: netman,
 	}
 
-	e.GET("/v1/network/:id", s.getNet)
-	e.POST("/v1/network/:id/peers", s.registerPeer)
-	e.POST("/v1/network/:id/peers/:peer/approve", s.approvePeer)
-	e.POST("/v1/network/:id/peers/:peer/disapprove", s.disapprovePeer)
-	e.POST("/v1/network/:id/peers/:peer/activate", s.activatePeer)
-	e.POST("/v1/network/:id/peers/:peer/deactivate", s.deactivatePeer)
+	e.GET("/v1/networks/:id", s.getNet)
+	e.POST("/v1/networks/:id/peers", s.registerPeer)
+	e.POST("/v1/networks/:id/peers/approve", s.approvePeer)
+	e.POST("/v1/networks/:id/peers/disapprove", s.disapprovePeer)
+	e.POST("/v1/networks/:id/peers/activate", s.activatePeer)
+	e.POST("/v1/networks/:id/peers/deactivate", s.deactivatePeer)
 
 	return s, nil
 }

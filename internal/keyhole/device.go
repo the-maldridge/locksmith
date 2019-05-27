@@ -70,6 +70,7 @@ func (k *Keyhole) ConfigureDevice(dc InterfaceConfig, reply *string) error {
 	if err != nil {
 		return err
 	}
+
 	return k.wg.ConfigureDevice(dc.Name, *cfg)
 }
 

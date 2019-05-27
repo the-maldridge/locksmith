@@ -76,7 +76,7 @@ func (nm *NetworkManager) initializeDrivers() {
 			requiredDrivers[net.Driver]++
 			continue
 		}
-		requiredDrivers["LOCAL"]++
+		requiredDrivers["KEYHOLE"]++
 	}
 	nm.driver = make(map[string]driver.Driver)
 	for k := range requiredDrivers {

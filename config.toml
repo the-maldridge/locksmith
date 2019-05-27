@@ -2,6 +2,12 @@
   [nm.expiry]
     interval = "5s"
 
+[keyhole]
+  configkey="password"
+  servers = [
+    "127.0.0.1:1234"
+  ]
+
 [[Network]]
 Name = "Default Network"
 ID = "default"
