@@ -31,7 +31,58 @@ activated for a configured amount of time.  For some networks this
 will be an infinite period of time, but the intention is that keys are
 validated for a bit longer than the average work day.
 
+## How it Works
+
+There are two components, there is the locksmith service which handles
+lifecycle management for keys and generally provides the access
+control, and there is the keyhole service which is a privileged
+process that actually modifies the wireguard interface.
+
+Keyhole runs as root on Linux systems in order to modify the
+interface, but Locksmith can and should run as an unprivileged user.
+
+## State of the project
+
+All of the critical parts work, but this is not production ready code,
+see below.
+
 ## Want to Help?
 
 This is an open project, feel free to send your PRs and to get
 involved!
+
+The following areas are currently highly desired modules.  Please open
+an issue and discuss if you're interested in working on any of these:
+
+  * Tests.  This is arguably security critical code, and so test
+    coverage is important.  I do not have the bandwidth right now to
+    write good tests as this started out as a toy project to see what
+    was possible.  Now that it is worth working on and finishing, some
+    tests should be written.  I would accept changes that alter
+    interfaces if they do not break overal functionality if they
+    improve test coverage.
+  * Linear IPAM.  The system needs an IPAM implementation that assigns
+    addresses linearly through an IPv4 block.
+  * HA Storage backend.  It would be nice to have multiple locksmith
+    instances, which would use the same storage backend.
+  * Keyhole authentication.  Currently keyhole blindly accepts
+    changes.  This is obviously not right.  Some means for locksmith
+    to authenticate to keyhole would be ideal.  This is likely just a
+    simple token, but I will entertain all options.
+  * Frontend authentication.  The system should have multiple ways to
+    become authenticated, once authenticated it should be possible to
+    submit new keys to the system, or request activation of existing
+    keys.  Tokens possesing a network-admin capability on a particular
+    network should be able to install keys for other entities, approve
+    and disapprove existing keys, and activate and deactivate keys for
+    any user.  Users without a network-admin capability should only be
+    able to alter state on their own keys.
+  * Frontend webapp.  For the vast majority of users, a frontend
+    webapp is critical as it is how they will interact with the
+    system.  This will need to be able to generate configuration
+    fragments for users, perform administrative functions, and provide
+    an interface to request key activation.  I'd like something simple
+    here, but I'm not opposed to a VueJS or EmberJS style application.
+  * CLI Tool.  Anything the webapp can do the CLI should be able to do
+    as well.  I'd like this to be built with cobra so that it can read
+    the configuration values in the same way.
