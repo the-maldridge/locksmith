@@ -8,6 +8,11 @@
     "127.0.0.1:1234"
   ]
 
+[http]
+  [http.token]
+    lifetime = "10m"
+    key = "asdfasdfasdfasdf"
+
 [[Network]]
 Name = "Default Network"
 ID = "default"

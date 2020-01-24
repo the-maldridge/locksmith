@@ -2,6 +2,8 @@ package http
 
 import (
 	"github.com/labstack/echo"
+	"github.com/labstack/echo/middleware"
+	"github.com/spf13/viper"
 
 	"github.com/the-maldridge/locksmith/internal/nm"
 )
@@ -15,12 +17,17 @@ func New(netman nm.NetworkManager) (Server, error) {
 		nm: netman,
 	}
 
-	e.GET("/v1/networks/:id", s.getNet)
-	e.POST("/v1/networks/:id/peers", s.registerPeer)
-	e.POST("/v1/networks/:id/peers/approve", s.approvePeer)
-	e.POST("/v1/networks/:id/peers/disapprove", s.disapprovePeer)
-	e.POST("/v1/networks/:id/peers/activate", s.activatePeer)
-	e.POST("/v1/networks/:id/peers/deactivate", s.deactivatePeer)
+	v1 := e.Group("/v1")
+	v1.Use(middleware.JWT([]byte(viper.GetString("http.token.key"))))
+
+	v1.GET("/networks/:id", s.getNet)
+	v1.POST("/networks/:id/peers", s.registerPeer)
+	v1.POST("/networks/:id/peers/approve", s.approvePeer)
+	v1.POST("/networks/:id/peers/disapprove", s.disapprovePeer)
+	v1.POST("/networks/:id/peers/activate", s.activatePeer)
+	v1.POST("/networks/:id/peers/deactivate", s.deactivatePeer)
+
+	s.initializeAuthProviders()
 
 	return s, nil
 }

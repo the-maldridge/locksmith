@@ -2,15 +2,22 @@ package main
 
 import (
 	"log"
+	"time"
 
 	"github.com/spf13/viper"
 
 	"github.com/the-maldridge/locksmith/internal/http"
+	_ "github.com/the-maldridge/locksmith/internal/http/auth/dummy"
+
 	"github.com/the-maldridge/locksmith/internal/nm"
 	_ "github.com/the-maldridge/locksmith/internal/nm/driver/keyhole"
 	_ "github.com/the-maldridge/locksmith/internal/nm/ipam/dummy"
 	_ "github.com/the-maldridge/locksmith/internal/nm/state/json"
 )
+
+func init() {
+	viper.SetDefault("http.token.lifetime", time.Hour*12)
+}
 
 func main() {
 	viper.SetConfigName("config")
