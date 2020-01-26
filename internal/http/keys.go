@@ -28,7 +28,7 @@ func (s *Server) registerPeer(c echo.Context) error {
 		return c.JSON(http.StatusPreconditionFailed, err.Error())
 	}
 
-	return c.JSON(http.StatusOK, peer)
+	return c.NoContent(http.StatusNoContent)
 }
 
 func (s *Server) approvePeer(c echo.Context) error {
