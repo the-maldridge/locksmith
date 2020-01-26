@@ -20,6 +20,10 @@ func (s *Server) registerPeer(c echo.Context) error {
 		return err
 	}
 
+	if err = s.requestAuthorized(c, "register", peer.Owner); err != nil {
+		return c.JSON(http.StatusPreconditionFailed, err.Error())
+	}
+
 	if err := s.nm.AttemptNetworkRegistration(c.Param("id"), peer); err != nil {
 		return c.JSON(http.StatusPreconditionFailed, err.Error())
 	}
@@ -31,6 +35,10 @@ func (s *Server) approvePeer(c echo.Context) error {
 	peer, err := peerFromContext(c)
 	if err != nil {
 		return err
+	}
+
+	if err = s.requestAuthorized(c, "approve", peer.Owner); err != nil {
+		return c.JSON(http.StatusPreconditionFailed, err.Error())
 	}
 
 	if err := s.nm.ApprovePeer(c.Param("id"), peer.PubKey); err != nil {
@@ -46,6 +54,10 @@ func (s *Server) disapprovePeer(c echo.Context) error {
 		return err
 	}
 
+	if err = s.requestAuthorized(c, "approve", peer.Owner); err != nil {
+		return c.JSON(http.StatusPreconditionFailed, err.Error())
+	}
+
 	if err := s.nm.DisapprovePeer(c.Param("id"), peer.PubKey); err != nil {
 		return c.String(http.StatusBadRequest, err.Error())
 	}
@@ -57,6 +69,10 @@ func (s *Server) activatePeer(c echo.Context) error {
 	peer, err := peerFromContext(c)
 	if err != nil {
 		return err
+	}
+
+	if err = s.requestAuthorized(c, "activate", peer.Owner); err != nil {
+		return c.JSON(http.StatusPreconditionFailed, err.Error())
 	}
 
 	if err := s.nm.ActivatePeer(c.Param("id"), peer.PubKey); err != nil {
@@ -72,6 +88,10 @@ func (s *Server) deactivatePeer(c echo.Context) error {
 		return err
 	}
 
+	if err = s.requestAuthorized(c, "activate", peer.Owner); err != nil {
+		return c.JSON(http.StatusPreconditionFailed, err.Error())
+	}
+
 	if err := s.nm.DeactivatePeer(c.Param("id"), peer.PubKey); err != nil {
 		return c.String(http.StatusBadRequest, err.Error())
 	}
@@ -83,6 +103,13 @@ func peerFromContext(c echo.Context) (models.Peer, error) {
 	peer := models.Peer{}
 	if err := c.Bind(&peer); err != nil {
 		return models.Peer{}, err
+	}
+
+	// If the peer wasn't sent with an explicit user, then try to
+	// set it as the user that's currently authenticated.
+	if peer.Owner == "" {
+		cl := getClaims(c)
+		peer.Owner = cl["user"].(string)
 	}
 
 	return peer, nil

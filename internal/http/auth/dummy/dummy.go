@@ -1,6 +1,8 @@
 package dummy
 
 import (
+	"strings"
+
 	"github.com/labstack/echo"
 
 	"github.com/the-maldridge/locksmith/internal/http"
@@ -25,9 +27,14 @@ func (da *dummyAuth) poke(c echo.Context) error {
 }
 
 func (da *dummyAuth) auth(c echo.Context) error {
-	t, err := http.AuthCreateToken(http.TokenClaims{})
+	cl := http.TokenClaims{}
+
+	cl["user"] = c.QueryParam("u")
+	cl["permissions"] = strings.Split(c.QueryParam("p"), ",")
+
+	t, err := http.AuthCreateToken(cl)
 	if err != nil {
 		return c.String(500, err.Error())
 	}
-	return c.String(200, t)
+	return c.String(200, t+"\n")
 }

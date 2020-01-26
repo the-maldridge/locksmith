@@ -1,7 +1,9 @@
 package http
 
 import (
+	"errors"
 	"log"
+	"strings"
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
@@ -67,4 +69,53 @@ func AuthCreateToken(c map[string]interface{}) (string, error) {
 	// Generate encoded token and send it as response.
 	t, err := token.SignedString([]byte(viper.GetString("http.token.key")))
 	return t, err
+}
+
+// requestAuthorized looks at the permissions in a given request and
+// checks that the request either contains the requested permission,
+// or a supervisory capability that overrides it.
+func (s *Server) requestAuthorized(c echo.Context, perm, tgtOwner string) error {
+	claims := getClaims(c)
+	reqOwner := claims["user"].(string)
+
+	pset := make(map[string]struct{})
+	for _, p := range claims["permissions"].([]interface{}) {
+		pset[strings.ToLower(p.(string))] = struct{}{}
+	}
+	log.Println(pset)
+
+	net := c.Param("id")
+
+	// Make checks for the individual nodes of the permissions
+	// checks below.  This still winds up being O(N) and is much
+	// easier to read than a clever loop.
+	_, netAny := pset[net+":*"]
+	_, netExact := pset[net+":"+perm]
+	_, netSudo := pset[net+":sudo"]
+	_, anyAny := pset["*:*"]
+	_, anyExact := pset["*:"+perm]
+	_, anySudo := pset["*:sudo"]
+
+	hasPerm := netAny || netExact || anyAny || anyExact
+	hasSudo := netAny || anyAny || netSudo || anySudo
+
+	// Now we can perform the permissions check.  If the user has
+	// any permission on any network, or any on the specific one
+	// that satisfies the check right away.  Failing that we check
+	// that they have the permission and optionally if they
+	// require sudo.
+	if hasPerm && (reqOwner == tgtOwner || hasSudo) {
+		return nil
+	}
+
+	// Anything but the above and the request isn't authorized.
+	return errors.New("requestor unqualified")
+}
+
+// Need to fish out the claims in a single function so that the
+// peerFromContext can use the same logic and error handling.
+func getClaims(c echo.Context) map[string]interface{} {
+	user := c.Get("user").(*jwt.Token)
+	claims := user.Claims.(jwt.MapClaims)
+	return claims
 }

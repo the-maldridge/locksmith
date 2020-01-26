@@ -9,7 +9,7 @@ explain what's going on and why it works.
 This endpoint will return a JSON structure containing information
 about a particular network.  Since this allows you to tie key
 identities to IPs, which would allow you to observe traffic flows, you
-must posses a token with the `root` capability for the given network.
+must posses a token with the `sudo` capability for the given network.
 
 Such a request and response looks like this:
 
@@ -57,9 +57,10 @@ $ curl -X GET -H "Authorization: Bearer $TOKEN" http://localhost:1323/v1/network
 
 Adding a peer makes it available for the network to use.  Depending on
 the setup of the network, anyone may be able to add a key, or it may
-require the `add` permission for the given network.  Once you have
-added the key it will by default be staged; again, the network may be
-configured to automatically approve and/or activate the new key.
+require the `register` permission for the given network.  Once you
+have added the key it will by default be staged; again, the network
+may be configured to automatically approve and/or activate the new
+key.
 
 ```
 $ curl -X POST \
@@ -71,7 +72,7 @@ $ curl -X POST \
 
 In the above example, the `Owner` is specified for the key.  This
 allows the request to submit keys for other users, but doing so
-requires the `other` permission for the network.
+requires the `sudo` permission for the network.
 
 ## Approving an Existing Peer - `/v1/networks/:id/peers/approve`
 
@@ -93,7 +94,8 @@ $ curl -X POST \
 An existing peer's power to use the network can be revoked at any time
 by disapproving it.  If the peer is active, disapproving it will force
 the activation state to inactive.  Disapproved peers will still be
-listed as staged on the network.
+listed as staged on the network.  Disapproving requires the `approve`
+permission.
 
 ```
 $ curl -X POST \
@@ -125,6 +127,7 @@ $ curl -X POST \
 
 Deactivating a peer removes it from the wireguard interface and it
 will no longer be able to pass traffic.  The peer will stay approved.
+Deactivating a peer requires the `activate` permission.
 
 ```
 $ curl -X POST \
