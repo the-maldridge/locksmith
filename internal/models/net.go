@@ -31,7 +31,7 @@ type NetState struct {
 	ApprovalExpirations   map[string]time.Time
 	ActivationExpirations map[string]time.Time
 
-	AddressTable map[string]string
+	AddressTable map[string]map[string]struct{}
 
 	StagedPeers   map[string]Peer
 	ApprovedPeers map[string]Peer
@@ -48,7 +48,7 @@ func (n *NetState) Initialize() {
 	}
 
 	if n.AddressTable == nil {
-		n.AddressTable = make(map[string]string)
+		n.AddressTable = make(map[string]map[string]struct{})
 	}
 
 	if n.StagedPeers == nil {

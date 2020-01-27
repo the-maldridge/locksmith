@@ -82,7 +82,6 @@ func (s *Server) requestAuthorized(c echo.Context, perm, tgtOwner string) error 
 	for _, p := range claims["permissions"].([]interface{}) {
 		pset[strings.ToLower(p.(string))] = struct{}{}
 	}
-	log.Println(pset)
 
 	net := c.Param("id")
 

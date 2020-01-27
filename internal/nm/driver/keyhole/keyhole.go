@@ -25,16 +25,18 @@ func new() (driver.Driver, error) {
 
 // Configure passes off data to keyhole to configure it.
 func (d *Driver) Configure(name string, state models.NetState) error {
-	invertMap := make(map[string][]string)
-	for addr, key := range state.AddressTable {
-		invertMap[key] = append(invertMap[key], addr)
+	condensed := make(map[string][]string)
+	for peer, addresses := range state.AddressTable {
+		for addr := range addresses {
+			condensed[peer] = append(condensed[peer], addr)
+		}
 	}
 
 	peers := []keyhole.Peer{}
 	for key := range state.ActivePeers {
 		p := keyhole.Peer{
 			Pubkey:     key,
-			AllowedIPs: invertMap[key],
+			AllowedIPs: condensed[key],
 		}
 		peers = append(peers, p)
 	}
