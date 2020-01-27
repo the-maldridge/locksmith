@@ -137,6 +137,20 @@ func (nm *NetworkManager) stagePeer(netID string, client models.Peer) error {
 	return nil
 }
 
+// DeregisterPeer removes a peer from a network entirely, deactivating
+// and disapproving as it goes.
+func (nm *NetworkManager) DeregisterPeer(netID, pubkey string) error {
+	nm.DeactivatePeer(netID, pubkey)
+	nm.DisapprovePeer(netID, pubkey)
+
+	net, err := nm.GetNet(netID)
+	if err != nil {
+		return err
+	}
+	delete(net.StagedPeers, pubkey)
+	return nm.StoreNet(net)
+}
+
 // ApprovePeer looks for a pubkey in StagedPeers and puts it into
 // ApprovedPeers.
 func (nm *NetworkManager) ApprovePeer(netID, pubkey string) error {
@@ -150,7 +164,7 @@ func (nm *NetworkManager) ApprovePeer(netID, pubkey string) error {
 		return ErrUnknownPeer
 	}
 
-	nm.configurePeer(&net, &peer)
+	nm.configurePeer(&net, peer)
 
 	net.ApprovedPeers[pubkey] = peer
 	delete(net.StagedPeers, pubkey)
@@ -190,7 +204,7 @@ func (nm *NetworkManager) DisapprovePeer(netID, pubkey string) error {
 		return ErrUnknownPeer
 	}
 
-	nm.deconfigurePeer(&net, &peer)
+	nm.deconfigurePeer(&net, peer)
 
 	if err := nm.StoreNet(net); err != nil {
 		return err

@@ -31,6 +31,29 @@ func (s *Server) registerPeer(c echo.Context) error {
 	return c.NoContent(http.StatusNoContent)
 }
 
+func (s *Server) deregisterPeer(c echo.Context) error {
+	// Check if the network requested is actually known.
+	if _, err := s.nm.GetNet(c.Param("id")); err != nil {
+		return c.String(http.StatusBadRequest, err.Error())
+	}
+
+	// If the network is known, then figure out the request.
+	peer, err := peerFromContext(c)
+	if err != nil {
+		return err
+	}
+
+	if err = s.requestAuthorized(c, "register", peer.Owner); err != nil {
+		return c.JSON(http.StatusPreconditionFailed, err.Error())
+	}
+
+	if err := s.nm.DeregisterPeer(c.Param("id"), peer.PubKey); err != nil {
+		return c.JSON(http.StatusPreconditionFailed, err.Error())
+	}
+
+	return c.NoContent(http.StatusNoContent)
+}
+
 func (s *Server) approvePeer(c echo.Context) error {
 	peer, err := peerFromContext(c)
 	if err != nil {
