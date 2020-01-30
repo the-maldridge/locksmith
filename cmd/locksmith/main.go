@@ -12,11 +12,13 @@ import (
 	"github.com/the-maldridge/locksmith/internal/nm"
 	_ "github.com/the-maldridge/locksmith/internal/nm/driver/keyhole"
 	_ "github.com/the-maldridge/locksmith/internal/nm/ipam/dummy"
+	_ "github.com/the-maldridge/locksmith/internal/nm/ipam/linearv4"
 	_ "github.com/the-maldridge/locksmith/internal/nm/state/json"
 )
 
 func init() {
 	viper.SetDefault("http.token.lifetime", time.Hour*12)
+	viper.SetDefault("core.home", ".")
 }
 
 func main() {

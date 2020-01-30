@@ -14,7 +14,7 @@ func init() {
 	ipam.Register("dummy", newAddresser)
 }
 
-func newAddresser() (ipam.IPAM, error) {
+func newAddresser(string) (ipam.IPAM, error) {
 	return &Dummy{}, nil
 }
 
@@ -30,7 +30,7 @@ func (*Dummy) NetInfo() ipam.NetInfo {
 }
 
 // Assign always assigns 192.168.0.2
-func (*Dummy) Assign(models.NetState, models.Peer) (net.IP, error) {
+func (*Dummy) Assign(models.Peer) (net.IP, error) {
 	return net.ParseIP("192.168.0.2"), nil
 }
 

@@ -52,20 +52,21 @@ func New() (NetworkManager, error) {
 }
 
 func (nm *NetworkManager) initializeIPAM() {
-	requiredIPAM := make(map[string]int)
+	nm.ipam = make(map[string]ipam.IPAM)
 	for _, net := range nm.networks {
 		for _, p := range net.IPAM {
-			requiredIPAM[p]++
+			parts := strings.SplitN(p, ":", 2)
+			if len(parts) != 2 {
+				log.Printf("Driver config malformed (%s) should be <driver>:<pool>", p)
+				continue
+			}
+			a, err := ipam.Initialize(parts[0], parts[1])
+			if err != nil {
+				log.Printf("Could not initialize %s for pool %s", parts[0], parts[1])
+				continue
+			}
+			nm.ipam[p] = a
 		}
-	}
-	nm.ipam = make(map[string]ipam.IPAM)
-	for k := range requiredIPAM {
-		a, err := ipam.Initialize(k)
-		if err != nil {
-			log.Printf("Addresser '%s' is unavailable: '%s'.", k, err)
-			continue
-		}
-		nm.ipam[k] = a
 	}
 }
 

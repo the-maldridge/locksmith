@@ -12,7 +12,7 @@ func (nm *NetworkManager) configurePeer(wnet *Network, peer models.Peer) {
 	for _, h := range wnet.IPAM {
 		netinfo := nm.ipam[h].NetInfo()
 
-		ip, err := nm.ipam[h].Assign(wnet.NetState, peer)
+		ip, err := nm.ipam[h].Assign(peer)
 		if err != nil {
 			log.Printf("Error assigning address on net '%s': '%s'", wnet.ID, err)
 			continue

@@ -1,6 +1,12 @@
 [nm]
   [nm.expiry]
     interval = "5s"
+  [nm.ipam.linearv4]
+    [nm.ipam.linearv4.standard]
+      cidr = "192.168.32.0/24"
+      dns = ["1.1.1.1"]
+      search = ["example.com"]
+      reserved = ["192.168.32.1/32"]
 
 [keyhole]
   configkey="password"
@@ -20,7 +26,8 @@ Interface = "wg0"
 ApproveExpiry = "1m"
 ActivateExpiry = "30s"
 IPAM = [
-  "dummy",
+  "dummy:dummy",
+  "linearv4:standard",
 ]
 AllowedIPs = [
   "10.0.0.0/23"
@@ -35,7 +42,7 @@ ID = "anet"
 Interface = "wg1"
 ApproveMode = "AUTO"
 IPAM = [
-  "dummy",
+  "dummy:dummy",
 ]
 
 [[Network]]
