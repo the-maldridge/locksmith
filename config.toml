@@ -6,7 +6,7 @@
       cidr = "192.168.32.0/24"
       dns = ["1.1.1.1"]
       search = ["example.com"]
-      reserved = ["192.168.32.1/32"]
+      reserved = ["192.168.32.1"]
 
 [keyhole]
   configkey="password"
@@ -26,7 +26,6 @@ Interface = "wg0"
 ApproveExpiry = "1m"
 ActivateExpiry = "30s"
 IPAM = [
-  "dummy:dummy",
   "linearv4:standard",
 ]
 AllowedIPs = [

@@ -61,22 +61,12 @@ an issue and discuss if you're interested in working on any of these:
     tests should be written.  I would accept changes that alter
     interfaces if they do not break overal functionality if they
     improve test coverage.
-  * Linear IPAM.  The system needs an IPAM implementation that assigns
-    addresses linearly through an IPv4 block.
   * HA Storage backend.  It would be nice to have multiple locksmith
     instances, which would use the same storage backend.
   * Keyhole authentication.  Currently keyhole blindly accepts
     changes.  This is obviously not right.  Some means for locksmith
     to authenticate to keyhole would be ideal.  This is likely just a
     simple token, but I will entertain all options.
-  * Frontend authentication.  The system should have multiple ways to
-    become authenticated, once authenticated it should be possible to
-    submit new keys to the system, or request activation of existing
-    keys.  Tokens possesing a network-admin capability on a particular
-    network should be able to install keys for other entities, approve
-    and disapprove existing keys, and activate and deactivate keys for
-    any user.  Users without a network-admin capability should only be
-    able to alter state on their own keys.
   * Frontend webapp.  For the vast majority of users, a frontend
     webapp is critical as it is how they will interact with the
     system.  This will need to be able to generate configuration
