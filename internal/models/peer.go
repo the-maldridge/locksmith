@@ -17,3 +17,19 @@ type Peer struct {
 	// installed.
 	PubKey string
 }
+
+// A PeerConfig is the configuration data that is fed back to a peer
+// from the server.  This contains enough to initialize the peer with
+// wg-quick.
+type PeerConfig struct {
+	PeerPubKey string
+
+	Staged   bool
+	Approved bool
+	Active   bool
+
+	DNS        []string
+	AllowedIPs []string
+	Addresses  []string
+	Search     []string
+}

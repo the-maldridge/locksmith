@@ -59,3 +59,42 @@ func (nm *NetworkManager) deconfigurePeer(wnet *Network, peer models.Peer) {
 	delete(wnet.ApprovedPeers, peer.PubKey)
 	delete(wnet.ApprovalExpirations, peer.PubKey)
 }
+
+// GenerateConfigForPeer assembles the peer's half of the
+// configuration data.  This is not stored persistently as the
+// underlying information may change frequently.
+func (nm *NetworkManager) GenerateConfigForPeer(netID string, pubkey string) (models.PeerConfig, error) {
+	net, err := nm.GetNet(netID)
+	if err != nil {
+		return models.PeerConfig{}, err
+	}
+
+	c := models.PeerConfig{}
+
+	c.DNS = net.DNS
+	c.AllowedIPs = net.AllowedIPs
+
+	for _, h := range net.IPAM {
+		netinfo := nm.ipam[h].NetInfo()
+		for _, resolver := range netinfo.DNS {
+			c.DNS = append(c.DNS, resolver.String())
+		}
+		c.Search = append(c.Search, netinfo.Search...)
+	}
+
+	_, c.Staged = net.StagedPeers[pubkey]
+	_, c.Approved = net.ApprovedPeers[pubkey]
+	_, c.Active = net.ActivePeers[pubkey]
+
+	// As a final step, fill in addresses if any are present.
+	addrs, ok := net.AddressTable[pubkey]
+	if !ok {
+		return c, nil
+	}
+
+	for addr := range addrs {
+		c.Addresses = append(c.Addresses, addr)
+	}
+
+	return c, nil
+}

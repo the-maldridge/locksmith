@@ -22,6 +22,7 @@ func New(netman nm.NetworkManager) (Server, error) {
 
 	v1.GET("/networks/:id", s.getNet)
 	v1.POST("/networks/:id/peers", s.registerPeer)
+	v1.GET("/networks/:id/peers/config/:peer", s.fetchPeerConfiguration)
 	v1.POST("/networks/:id/peers/deregister", s.deregisterPeer)
 	v1.POST("/networks/:id/peers/approve", s.approvePeer)
 	v1.POST("/networks/:id/peers/disapprove", s.disapprovePeer)
