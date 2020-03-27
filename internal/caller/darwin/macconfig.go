@@ -7,7 +7,6 @@ import (
 	"os/exec"
 	"regexp"
 
-	"golang.zx2c4.com/wireguard/wgctrl/wgtypes"
 	"howett.net/plist"
 	"github.com/satori/go.uuid"
 )
@@ -20,15 +19,6 @@ var (
 	profiles             = "/usr/bin/profiles"
 	plIdentifierTemplate = "com.%s.wireguard.%s-tunnel.tunnel"
 	plUUIDTemplate       = "%s: Generated UUID"
-	tunnelTemplate       = `[Interface]
-PrivateKey = %s
-Address = %s
-DNS = %s
-
-[Peer]
-PublicKey = %s
-Endpoint = %s
-AllowedIPs = %s`
 )
 
 // vendorConfig represents a mobileConfig vendor configuration.
@@ -69,15 +59,12 @@ type MobileConfig struct {
 // MacConfig represents a MacOS X WireGuard configuration.
 type MacConfig struct {
 	localDevice wgtypes.device
-	tunnel      []byte
+	Config      []byte
 	data        MobileConfig
 	vpn         VpnConfig
 	vendor      VendorConfig
 	payload     PayloadContent
 	config      MobileConfig
-	addr        string
-	endpoint    string
-	allowedIps  string
 	org         string
 }
 
@@ -87,8 +74,12 @@ func init() {
 }
 
 // NewConfig creates a new WireGuard mobile configuration.
-func NewConfig() MacConfig {
+func NewConfig() *MacConfig {
+	return new(MacConfig)
+}
 
+
+func (m *MacConfig) RecompileMobileConfig() {
 	defaultVPNConfig := VpnConfig{
 		RemoteAddress:        "",
 		AuthenticationMethod: "Password",
@@ -134,7 +125,6 @@ func NewConfig() MacConfig {
 		tunnel:      wgTunnelConfig,
 		data:        configTemplate,
 	}
-	return &newMacConfig
 }
 
 // SetOrg sets the name of the MacConfig organization.
@@ -291,12 +281,6 @@ func removeBadCharacters(inFile, outFile string) error {
 	}
 	_ = os.Remove(inFile)
 	return nil
-}
-
-// RecompileMobileConfig updates the datastructures in MacConfig to
-// provide an up to date tunnel mobileconfi
-func (m *MacConfing) RecompileMobileConfig() {
-
 }
 
 // RemoveLocalFiles removes the local files written during the config
