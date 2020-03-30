@@ -136,3 +136,35 @@ $ curl -X POST \
     -d '{"PubKey":"F3sSyEZ/VSHVurBN3oAAL+Vt5+6/zlnbeiUJwy4kbwU="}' \
     http://localhost:1323/v1/networks/default/peers/deactivate
 ```
+
+## Fetching Configuration for a Peer
+
+Once a peer is known to the server, some parts of its configuration
+will be available.  These can be fetched using the config endpoint.
+Because WireGuard keys can contain non-URL safe characters, keys
+should be URL encoded to use this endpoint.
+
+```
+curl -X GET \
+    -H "Authorization: Bearer $TOKEN" \
+    http://localhost:1323/v1/networks/default/peers/config/TXO8ENOkmLCQsM3MlJsnO4q9fyBST7Diu1mtMo1%2F7zo%3D | jq .
+{
+  "PeerPubKey": "",
+  "Staged": true,
+  "Approved": false,
+  "Active": false,
+  "DNS": [
+    "8.8.8.8",
+    "1.1.1.1"
+  ],
+  "AllowedIPs": [
+    "10.0.0.0/23"
+  ],
+  "Addresses": null,
+  "Search": [
+    "example.com"
+  ]
+}
+```
+
+The returned information is sufficient to configure a peer using wg-quick.
